@@ -16,6 +16,7 @@
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
+#define NUM_THREADS 8
 
 extern int compute_gold(float*, const float*, unsigned int);
 Matrix allocate_matrix(int num_rows, int num_columns, int init);
@@ -96,7 +97,7 @@ gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write
 	unsigned int i, j, k;
 
 
-	#pragma omp parallel num_threads(8) shared(A, U, num_elements) private(i, j , k)
+	#pragma omp parallel num_threads(NUM_THREADS) shared(A, U, num_elements) private(i, j , k)
 	#pragma omp parallel for
 	for (i = 0; i < num_elements; i++){             /* Copy the contents of the A matrix into the U matrix. */
 	    for(j = 0; j < num_elements; j++){
@@ -104,10 +105,8 @@ gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write
 	    }
 	}
 
-
+	#pragma omp parallel num_threads(NUM_THREADS) shared(A, U, num_elements) private(i, j , k)
 	for (k = 0; k < num_elements; k++){         
-		#pragma omp parallel num_threads(8) shared(A, U, num_elements) private(i, j, k)
-		#pragma omp parallel for
 		for (j = (k + 1); j < num_elements; j++){ 
 
 				if (U[num_elements*k + k] == 0){
@@ -119,6 +118,7 @@ gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write
 		    }
 		
 		    U[num_elements * k + k] = 1;          
+
 
 		    for (i = (k+1); i < num_elements; i++){
 		        for (j = (k+1); j < num_elements; j++){
