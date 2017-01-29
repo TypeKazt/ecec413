@@ -97,14 +97,16 @@ gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write
 	int num_elements = MATRIX_SIZE;
 	unsigned int i, j, k;
 
-		for (i = 0; i < num_elements; i++){             /* Copy the contents of the A matrix into the U matrix. */
-		    for(j = 0; j < num_elements; j++){
-		        U[num_elements * i + j] = A[num_elements*i + j];
-		    }
-        #pragma omp parallel for default(none) shared(A, U, num_elements) private (i, j, k)
-	
+        #pragma omp default(none) shared(A, U, num_elements) private(i, j, k)
+	{
+	for (i = 0; i < num_elements; i++){             /* Copy the contents of the A matrix into the U matrix. */
+	    for(j = 0; j < num_elements; j++){
+	        U[num_elements * i + j] = A[num_elements*i + j];
+	    }
+
 	for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination in place on the U matrix. */
-		    for (j = (k + 1); j < num_elements; j++){   /* Reduce the current row. */
+	
+	    for (j = (k + 1); j < num_elements; j++){   /* Reduce the current row. */
 
 				if (U[num_elements*k + k] == 0){
 					printf("Numerical instability detected. The principal diagonal element is zero. \n");
@@ -116,7 +118,6 @@ gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write
 		
 		    U[num_elements * k + k] = 1;             /* Set the principal diagonal entry in U to be 1. */
 
-		    
 		    for (i = (k+1); i < num_elements; i++){
 		        for (j = (k+1); j < num_elements; j++){
 		            /* Elimnation step. */
@@ -128,6 +129,7 @@ gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write
 		   }
 		}
 
+	}
 	}
 }
 
