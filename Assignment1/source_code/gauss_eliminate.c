@@ -19,7 +19,7 @@
 
 extern int compute_gold(float*, const float*, unsigned int);
 Matrix allocate_matrix(int num_rows, int num_columns, int init);
-void gauss_eliminate_using_openmp(const Matrix, Matrix);
+void gauss_eliminate_using_openmp(const float*, float*);
 int perform_simple_check(const Matrix);
 void print_matrix(const Matrix);
 float get_random_number(int, int);
@@ -67,7 +67,13 @@ main(int argc, char** argv) {
 	/* WRITE THIS CODE: Perform the Gaussian elimination using the multi-threaded OpenMP version. 
      * The resulting upper triangular matrix should be returned in U
      * */
-	gauss_eliminate_using_openmp(A, U);
+	gettimeofday(&start, NULL);
+
+	printf("Performing OMP optimization\n");
+	gauss_eliminate_using_openmp(A.elements, U.elements);
+
+	gettimeofday(&stop, NULL);
+	printf("OMP CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
 	/* check if the OpenMP result is equivalent to the expected solution. */
 	int size = MATRIX_SIZE*MATRIX_SIZE;
@@ -83,25 +89,25 @@ main(int argc, char** argv) {
 
 
 void 
-gauss_eliminate_using_openmp(const Matrix A, Matrix U)                  /* Write code to perform gaussian elimination using OpenMP. */
+gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write code to perform gaussian elimination using OpenMP. */
 {
-	// TODO: add pragma for reduce current row
-	// TODO: add pragma for division step 
 
-
+	omp_set_num_threads(8);
+	
+	int num_elements = MATRIX_SIZE;
 	unsigned int i, j, k;
-		
-		for (i = 0; i < num_elements; i ++)             /* Copy the contents of the A matrix into the U matrix. */
-		    for(j = 0; j < num_elements; j++)
-		        U[num_elements * i + j] = A[num_elements*i + j];
 
-		
-		for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination in place on the U matrix. */
+		for (i = 0; i < num_elements; i++){             /* Copy the contents of the A matrix into the U matrix. */
+		    for(j = 0; j < num_elements; j++){
+		        U[num_elements * i + j] = A[num_elements*i + j];
+		    }
+        #pragma omp parallel for default(none) shared(A, U, num_elements) private (i, j, k)
+	
+	for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination in place on the U matrix. */
 		    for (j = (k + 1); j < num_elements; j++){   /* Reduce the current row. */
 
 				if (U[num_elements*k + k] == 0){
 					printf("Numerical instability detected. The principal diagonal element is zero. \n");
-					return 0;
 				}
 
 		        /* Division step. */
@@ -109,21 +115,20 @@ gauss_eliminate_using_openmp(const Matrix A, Matrix U)                  /* Write
 		    }
 		
 		    U[num_elements * k + k] = 1;             /* Set the principal diagonal entry in U to be 1. */
-		
+
+		    
 		    for (i = (k+1); i < num_elements; i++){
-		        for (j = (k+1); j < num_elements; j++)
+		        for (j = (k+1); j < num_elements; j++){
 		            /* Elimnation step. */
 					U[num_elements * i + j] = U[num_elements * i + j] -\
 		                                      (U[num_elements * i + k] * U[num_elements * k + j]);
 			
 		        U[num_elements * i + k] = 0; 
 			} 
+		   }
 		}
 
-		return 1;
-
-
-
+	}
 }
 
 
