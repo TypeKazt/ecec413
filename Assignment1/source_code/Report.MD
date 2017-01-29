@@ -3,7 +3,16 @@
 ### By: Alex Kazantsev and Hanumant Mahida
 ### Date: January 29th, 2017
 
-## Implimentation:
+## Implimentation & Results
 OpenMP was used to parallelize some of the functionality of calculating gaussian elimination. The time for a serial program is about 0.64 seconds on a 24-core Intel CPU for a 1024 by 1024 matrix. By utilizing OpenMP Pragmas, the time can be improved. Our results showed the paraellelized program taking an average of 0.45 seconds. This improvement was due to using two Pragmas and resulted in passing tests.
 
 We did see better improvements, an average of .18 seconds, however the tests failed. After investigating, we found that for the U[k][k] element of the matrix, the value would not match against the test matrix. 
+
+
+## Data
+
+| Number of Threads | Single Threaded Time (s) | Parallel Time (s)  |
+| ----------------  |:------------------------:| ------------------:|
+| 1                 | 2                        | 0.5                |
+| 2                 | 2                        | 0.5                |
+| 3                 | 2                        | 0.5                |
