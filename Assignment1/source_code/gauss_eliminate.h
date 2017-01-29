@@ -1,7 +1,7 @@
 #ifndef _MATRIXMUL_H_
 #define _MATRIXMUL_H_
 
-#define MATRIX_SIZE 1048
+#define MATRIX_SIZE 1024
 
 #define NUM_COLUMNS MATRIX_SIZE             /* Number of columns in Matrix A. */
 #define NUM_ROWS MATRIX_SIZE                /* Number of rows in Matrix A. */

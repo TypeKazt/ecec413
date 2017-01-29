@@ -16,11 +16,11 @@
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
-#define NUM_THREADS 8
+#define NUM_THREADS 16
 
 extern int compute_gold(float*, const float*, unsigned int);
 Matrix allocate_matrix(int num_rows, int num_columns, int init);
-void gauss_eliminate_using_openmp(const float*, float*);
+void gauss_eliminate_using_openmp(float* , float*);
 int perform_simple_check(const Matrix);
 void print_matrix(const Matrix);
 float get_random_number(int, int);
@@ -70,12 +70,11 @@ main(int argc, char** argv) {
      * */
 	gettimeofday(&start, NULL);
 
-	printf("Performing OMP optimization\n");
+	printf("Performing gaussian elimination using the threaded code. \n");
 	gauss_eliminate_using_openmp(A.elements, U.elements);
 
 	gettimeofday(&stop, NULL);
-	printf("OMP CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
-
+	printf("CPU run time omp = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 	/* check if the OpenMP result is equivalent to the expected solution. */
 	int size = MATRIX_SIZE*MATRIX_SIZE;
 	int res = check_results(reference.elements, U.elements, size, 0.001f);
@@ -90,58 +89,65 @@ main(int argc, char** argv) {
 
 
 void 
-gauss_eliminate_using_openmp(const float* A, float* U)                  /* Write code to perform gaussian elimination using OpenMP. */
+gauss_eliminate_using_openmp(float* A, float* U)                  /* Write code to perform gaussian elimination using OpenMP. */
 {
-
+	unsigned i, j, k;
 	int num_elements = MATRIX_SIZE;
-	unsigned int i, j, k;
+	omp_set_num_threads(NUM_THREADS);
+
+	#pragma omp parallel for shared(A, U) private(i, j, k)
+    for (i = 0; i < num_elements; i++)             /* Copy the contents of the A matrix into the U matrix. */
+        for(j = 0; j < num_elements; j++)
+            U[num_elements * i + j] = A[num_elements*i + j];
 
 
-	#pragma omp parallel num_threads(NUM_THREADS) shared(A, U, num_elements) private(i, j , k)
-	#pragma omp parallel for
-	for (i = 0; i < num_elements; i++){             /* Copy the contents of the A matrix into the U matrix. */
-	    for(j = 0; j < num_elements; j++){
-	        U[num_elements * i + j] = A[num_elements*i + j];
-	    }
-	}
+	#pragma omp barrier
 
-	#pragma omp parallel num_threads(NUM_THREADS) shared(A, U, num_elements) private(i, j , k)
-	for (k = 0; k < num_elements; k++){         
-		for (j = (k + 1); j < num_elements; j++){ 
+    for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination in place on the U matrix. */
+		#pragma omp parallel for 
+        for (j = (k + 1); j < num_elements; j++){   /* Reduce the current row. */
 
-				if (U[num_elements*k + k] == 0){
-//					printf("Numerical instability detected. The principal diagonal element is zero. \n");
-				}
+			if (U[num_elements*k + k] == 0){
+				printf("0 val: %f\n", U[num_elements*k + k]);
+				printf("0 val: %f\n", A[num_elements*k + k]);
+				printf("Numerical instability detected. The principal diagonal element is zero. \n");
+			}
 
-
-				U[num_elements * k + j] = (float)(U[num_elements * k + j] / U[num_elements * k + k]);
-		    }
-		
-		    U[num_elements * k + k] = 1;          
-
-
-		    for (i = (k+1); i < num_elements; i++){
-		        for (j = (k+1); j < num_elements; j++){
-
-					U[num_elements * i + j] = U[num_elements * i + j] -\
-		                                      (U[num_elements * i + k] * U[num_elements * k + j]);
-			
-		        U[num_elements * i + k] = 0; 
-			} 
-		   }
+            /* Division step. */
+			U[num_elements * k + j] = (float)(U[num_elements * k + j] / U[num_elements * k + k]);
 		}
+			//printf("vala: %f\n", U[num_elements*k + j]);
+		#pragma omp barrier
+		
+        U[num_elements * k + k] = 1;             /* Set the principal diagonal entry in U to be 1. */
+		#pragma omp parallel for 
+        for (i = (k+1); i < num_elements; i++){
+            for (j = (k+1); j < num_elements; j++){
+                /* Elimnation step. */
+				U[num_elements * i + j] = U[num_elements * i + j] -\
+                                          (U[num_elements * i + k] * U[num_elements * k + j]);
+			//	printf("valb: %f\n", U[num_elements*i + j]);
+			}
+			
+            U[num_elements * i + k] = 0; 
+		}
+	} 
 
 
-}	
+}
 
 
 int 
 check_results(float *A, float *B, unsigned int size, float tolerance)   /* Check if refernce results match multi threaded results. */
 {
 	for(int i = 0; i < size; i++){
-//		printf("%f   %f\n", A[i], B[i]);
-		if(fabsf(A[i] - B[i]) > tolerance)
+		if(fabsf(A[i] - B[i]) > tolerance){
+			printf("%d\n", i);
+			printf("A:%f  B:%f\n", A[i], B[i]);
+			printf("%d \n", i/NUM_ROWS);
+			printf("%d \n", i-((i/NUM_ROWS)*NUM_ROWS));
 			return 0;
+		}
 	}
 	
     return 1;
