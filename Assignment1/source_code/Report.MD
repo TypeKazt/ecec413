@@ -13,6 +13,7 @@ OpenMP was used to parallelize some of the functionality of calculating gaussian
         for(j = 0; j < num_elements; j++)
             U[num_elements * i + j] = A[num_elements*i + j];
 	#pragma omp barrier
+```
 
 A Pragma was used during the copying part of the program allowing for OpenMP to parallelize this functionality. This resulted in a minor speed improvement.
 
@@ -30,6 +31,7 @@ for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination 
 		}
 			//printf("vala: %f\n", U[num_elements*k + j]);
 		#pragma omp barrier
+```
 
 A Pragma was used to parallelize the row reduction and division steps of the program. This showed a significant speed improvement.
 
@@ -44,6 +46,7 @@ A Pragma was used to parallelize the row reduction and division steps of the pro
 			}
             U[num_elements * i + k] = 0; 
 		}
+```
 
 The last Pragma used was for the elimination step of the program. This also showed a significant speed improvement. 
 
