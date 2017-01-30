@@ -1,9 +1,9 @@
 /* Gaussian elimination code.
- *  * Author: Naga Kandasamy, 10/24/2015
- *   *
- *    * Compile as follows: 
- *     * gcc -o gauss_eliminate gauss_eliminate.c compute_gold.c -fopenmp -std=c99 -O3 -lm
- *      */
+ * Author: Naga Kandasamy, 10/24/2015
+ *
+ * Compile as follows: 
+ * gcc -o gauss_eliminate gauss_eliminate.c compute_gold.c -fopenmp -std=c99 -O3 -lm
+ */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -16,10 +16,7 @@
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
-<<<<<<< HEAD
-=======
 #define NUM_THREADS 16
->>>>>>> e22c69bc53655c50c288cc9c1fb1df3abc887544
 
 extern int compute_gold(float*, const float*, unsigned int);
 Matrix allocate_matrix(int num_rows, int num_columns, int init);
@@ -69,8 +66,8 @@ main(int argc, char** argv) {
 	printf("Gaussian elimination using the reference code was successful. \n");
 
 	/* WRITE THIS CODE: Perform the Gaussian elimination using the multi-threaded OpenMP version. 
- *      * The resulting upper triangular matrix should be returned in U
- *           * */
+     * The resulting upper triangular matrix should be returned in U
+     * */
 	gettimeofday(&start, NULL);
 
 	printf("Performing gaussian elimination using the threaded code. \n");
@@ -94,42 +91,10 @@ main(int argc, char** argv) {
 void 
 gauss_eliminate_using_openmp(float* A, float* U)                  /* Write code to perform gaussian elimination using OpenMP. */
 {
-<<<<<<< HEAD
-
-	omp_set_num_threads(8);
-	
-=======
 	unsigned i, j, k;
->>>>>>> e22c69bc53655c50c288cc9c1fb1df3abc887544
 	int num_elements = MATRIX_SIZE;
 	omp_set_num_threads(NUM_THREADS);
 
-<<<<<<< HEAD
-        #pragma omp default(none) shared(A, U, num_elements) private(i, j, k)
-	{
-	for (i = 0; i < num_elements; i++){             /* Copy the contents of the A matrix into the U matrix. */
-	    for(j = 0; j < num_elements; j++){
-	        U[num_elements * i + j] = A[num_elements*i + j];
-	    }
-	#pragma omp default(none) shared(A, U, num_elements) private(i, j, k)
-	{
-	#pragma omp for nowait
-	for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination in place on the U matrix. */
-	
-	    for (j = (k + 1); j < num_elements; j++){   /* Reduce the current row. */
-
-		        /* Division step. */
-				U[num_elements * k + j] = (float)(U[num_elements * k + j] / U[num_elements * k + k]);
-		    }
-		
-		    U[num_elements * k + k] = 1;             /* Set the principal diagonal entry in U to be 1. */
-
-		    for (i = (k+1); i < num_elements; i++){
-		        for (j = (k+1); j < num_elements; j++){
-		            /* Elimnation step. */
-					U[num_elements * i + j] = U[num_elements * i + j] -\
-		                                      (U[num_elements * i + k] * U[num_elements * k + j]);
-=======
 	#pragma omp parallel for shared(A, U) private(i, j, k)
     for (i = 0; i < num_elements; i++)             /* Copy the contents of the A matrix into the U matrix. */
         for(j = 0; j < num_elements; j++)
@@ -163,30 +128,18 @@ gauss_eliminate_using_openmp(float* A, float* U)                  /* Write code 
                                           (U[num_elements * i + k] * U[num_elements * k + j]);
 			//	printf("valb: %f\n", U[num_elements*i + j]);
 			}
->>>>>>> e22c69bc53655c50c288cc9c1fb1df3abc887544
 			
             U[num_elements * i + k] = 0; 
 		}
-<<<<<<< HEAD
-	}
-	}
-	}
-=======
 	} 
 
 
->>>>>>> e22c69bc53655c50c288cc9c1fb1df3abc887544
 }
 
 
 int 
 check_results(float *A, float *B, unsigned int size, float tolerance)   /* Check if refernce results match multi threaded results. */
 {
-<<<<<<< HEAD
-	for(int i = 0; i < size; i++)
-		if(fabsf(A[i] - B[i]) > tolerance)
-			return 0;
-=======
 	for(int i = 0; i < size; i++){
 		if(fabsf(A[i] - B[i]) > tolerance){
 			printf("%d\n", i);
@@ -196,16 +149,15 @@ check_results(float *A, float *B, unsigned int size, float tolerance)   /* Check
 			return 0;
 		}
 	}
->>>>>>> e22c69bc53655c50c288cc9c1fb1df3abc887544
 	
     return 1;
 }
 
 
 /* Allocate a matrix of dimensions height*width. 
- *  * If init == 0, initialize to all zeroes.  
- *   * If init == 1, perform random initialization.
- *    * */
+ * If init == 0, initialize to all zeroes.  
+ * If init == 1, perform random initialization.
+ * */
 Matrix 
 allocate_matrix(int num_rows, int num_columns, int init){
     Matrix M;
@@ -236,5 +188,4 @@ perform_simple_check(const Matrix M){                                   /* Check
 	
     return 1;
 } 
-
 
