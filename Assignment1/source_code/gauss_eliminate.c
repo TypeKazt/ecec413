@@ -16,7 +16,7 @@
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
-#define NUM_THREADS 2
+#define NUM_THREADS 8
 
 extern int compute_gold(float*, const float*, unsigned int);
 Matrix allocate_matrix(int num_rows, int num_columns, int init);
