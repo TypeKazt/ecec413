@@ -100,10 +100,15 @@ void compute_gold(int *input_data, int *histogram, int num_elements, int histogr
 // Write the function to compute the histogram using openmp
 void compute_using_openmp(int *input_data, int *histogram, int num_elements, int histogram_size)
 {
-	int i;
-	// Initialize histogram
+  int i;
+  omp_set_num_threads(NUM_THREADS);	
+  // Initialize histogram
+  #pragma omp parallel for shared(histogram) private(i)
   for(i = 0; i < histogram_size; i++) 
-			 histogram[i] = 0; 
+     histogram[i] = 0; 
+  #pragma omp parallel for shared(histogram) private(i)
+  for(i = 0; i < num_elements; i++)
+    histogram[input_data[i]]++;
 }
 
 void check_histogram(int *histogram, int num_elements, int histogram_size)
