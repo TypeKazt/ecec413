@@ -17,7 +17,7 @@ void compute_using_openmp(int *, int *, int, int);
 void check_histogram(int *, int, int);
 
 #define HISTOGRAM_SIZE 500
-#define NUM_THREADS 8
+#define NUM_THREADS 16
 
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
@@ -103,17 +103,38 @@ void compute_gold(int *input_data, int *histogram, int num_elements, int histogr
 // Write the function to compute the histogram using openmp
 void compute_using_openmp(int *input_data, int *histogram, int num_elements, int histogram_size)
 {
-  int i;
+  int i, n;
+  int* priv_histo;
   omp_set_num_threads(NUM_THREADS);	
+  int seg = num_elements/NUM_THREADS;
+
   // Initialize histogram
-  #pragma omp shared(histogram) private(i)
+  #pragma omp parallel shared(histogram, input_data) private(i)
   {
   #pragma omp for
   for(i = 0; i < histogram_size; i++) 
      histogram[i] = 0; 
-  #pragma omp for 
-  for(i = 0; i < num_elements; i++)
-    histogram[input_data[i]]++;
+  }
+
+  //#pragma omp parallel for shared(histogram, input_data) private(i) 
+  //#pragma omp parallel for shared(histogram, input_data) private(i)
+  #pragma omp parallel for shared(histogram, input_data, histogram_size, num_elements) private(n, i, priv_histo)
+  for(n = 0; n < NUM_THREADS; n++)
+  {
+	priv_histo = (int*) malloc(sizeof(int)*histogram_size);
+	
+    for(i = 0; i < histogram_size; i++)
+      priv_histo[i] = 0;
+	
+	for(i = omp_get_thread_num()*seg; i < num_elements - (NUM_THREADS - omp_get_thread_num() - 1)*seg; i++)
+		priv_histo[input_data[i]]++;
+    
+    #pragma openmp critical
+    {
+		for (i = 0; i < histogram_size; i++)
+  		  histogram[i] += priv_histo[i];
+    }
+
   }
 }
 
