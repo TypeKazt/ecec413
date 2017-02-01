@@ -106,13 +106,17 @@ void compute_using_openmp(int *input_data, int *histogram, int num_elements, int
   int i;
   omp_set_num_threads(NUM_THREADS);	
   // Initialize histogram
-  #pragma omp parallel for shared(histogram) private(i)
+  #pragma omp shared(histogram) private(i)
+  {
+  #pragma omp for
   for(i = 0; i < histogram_size; i++) 
      histogram[i] = 0; 
-  //#pragma omp parallel for shared(histogram) private(i)
+  #pragma omp for 
   for(i = 0; i < num_elements; i++)
     histogram[input_data[i]]++;
+  }
 }
+
 
 void check_histogram(int *histogram, int num_elements, int histogram_size)
 {
