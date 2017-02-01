@@ -66,8 +66,11 @@ void run_test(int num_elements)
 	// Compute the histogram using openmp. The result histogram should be stored on the histogram_using_openmp array
 	printf("\n");
 	printf("Creating histogram using OpenMP. \n");
+	gettimeofday(&start, NULL);
 	compute_using_openmp(input_data, histogram_using_openmp, num_elements, HISTOGRAM_SIZE);
-	// check_histogram(histogram_using_openmp, num_elements, HISTOGRAM_SIZE);
+	gettimeofday(&stop, NULL);
+	printf("OMP CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));	
+// check_histogram(histogram_using_openmp, num_elements, HISTOGRAM_SIZE);
 
 	// Compute the differences between the reference and pthread results
 	diff = 0.0;
