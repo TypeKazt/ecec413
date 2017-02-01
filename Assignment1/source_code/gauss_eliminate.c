@@ -104,7 +104,7 @@ gauss_eliminate_using_openmp(float* A, float* U)                  /* Write code 
 	#pragma omp barrier
 
     for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination in place on the U matrix. */
-		#pragma omp parallel for 
+		#pragma omp parallel for private(i, j) 
         for (j = (k + 1); j < num_elements; j++){   /* Reduce the current row. */
 
 			if (U[num_elements*k + k] == 0){
@@ -117,7 +117,7 @@ gauss_eliminate_using_openmp(float* A, float* U)                  /* Write code 
 			U[num_elements * k + j] = (float)(U[num_elements * k + j] / U[num_elements * k + k]);
 		}
 			//printf("vala: %f\n", U[num_elements*k + j]);
-		#pragma omp barrier
+		//#pragma omp barrier
 		
         U[num_elements * k + k] = 1;             /* Set the principal diagonal entry in U to be 1. */
 		#pragma omp parallel for 
