@@ -121,18 +121,18 @@ void compute_using_openmp(int *input_data, int *histogram, int num_elements, int
   #pragma omp parallel for shared(histogram, input_data, histogram_size, num_elements) private(n, i, priv_histo)
   for(n = 0; n < NUM_THREADS; n++)
   {
-	priv_histo = (int*) malloc(sizeof(int)*histogram_size);
+    priv_histo = (int*) malloc(sizeof(int)*histogram_size);
 	
     for(i = 0; i < histogram_size; i++)
       priv_histo[i] = 0;
 	
-	for(i = omp_get_thread_num()*seg; i < num_elements - (NUM_THREADS - omp_get_thread_num() - 1)*seg; i++)
-		priv_histo[input_data[i]]++;
+    for(i = omp_get_thread_num()*seg; i < num_elements - (NUM_THREADS - omp_get_thread_num() - 1)*seg; i++)
+      priv_histo[input_data[i]]++;
     
     #pragma openmp critical
     {
-		for (i = 0; i < histogram_size; i++)
-  		  histogram[i] += priv_histo[i];
+      for (i = 0; i < histogram_size; i++)
+      histogram[i] += priv_histo[i];
     }
 
   }
