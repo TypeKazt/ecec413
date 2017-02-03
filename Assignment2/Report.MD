@@ -75,7 +75,8 @@ A normal pragma with parallel would render the incorrect histogram and sometimes
 
 
 ### Extra Timing data
-
+| Number of Elements |	Number of Threads	| Serial Time (s)	| Parallel Time (s) |
+| ------------------|-------------|-----------------|-------------------|
 | num_elements | num_threads | 0.0058 | | 0.0071 |
 | num_elements | num_threads | 0.0046 | | 0.0038 |
 | num_elements | num_threads | 0.0044 | | 0.0035 |
