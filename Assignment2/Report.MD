@@ -4,18 +4,43 @@
 ### Date: Febuary 2th, 2017
 
 ## Implimentation & Results
+The most optimal technique to parallelize the histogram program was to impliment an OpenMP Pragma Reduction of the array. However, due to the configuration on Xunil, the version of OpenMP does not support reduction on arrays. Therefore we had to impliment something similar to what reduction does for an array. 
+
+In order to improve the speed of the histogram in parallel, we split the elements into multiple threads locally and then joined them together at the end. This showed an improvement of over 4x for the 100 million elements and 16 threads test run. 
 
 ## Code
+The initialization of the histogram is parallelized using a pragma since there aren't any overlapping memory spaces where there needs to be serialization.
 ```C
-
+   // Initialize histogram
+   #pragma omp parallel shared(histogram, input_data) private(i)
+   {
+   #pragma omp for
+   for(i = 0; i < histogram_size; i++)
+      histogram[i] = 0;
+   }
 ```
 
+A normal pragma with parallel would render the correct histogram and sometimes would show significantly worse results. In order to overcome this, reduction on the array was needed. First, memory was allocated for each of the threads using a malloc. For each thread, the histogram was split so the input_data could be processed in parallel without any memory overlaps. A Pragma Omp Critical was used to ensure all the input_data was processed and threads completed before movign on. In the last step all of the private histograms were put together. 
 
 ```C
-```
+#pragma omp parallel for shared(histogram, input_data, histogram_size, num_elements)   private(n, i, priv_histo)
+   for(n = 0; n < num_threads; n++)
+   {
+     priv_histo = (int*) malloc(sizeof(int)*histogram_size);
 
+     for(i = 0; i < histogram_size; i++)
+       priv_histo[i] = 0;
 
-```C
+     for(i = omp_get_thread_num()*seg; i < num_elements - (num_threads -                  omp_get_thread_num() - 1)*seg; i++)
+       priv_histo[input_data[i]]++;
+
+     #pragma openmp critical
+     {
+       for (i = 0; i < histogram_size; i++)
+       histogram[i] += priv_histo[i];
+     }
+
+   }
 ```
 
 
