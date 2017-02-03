@@ -1,7 +1,7 @@
 # Report of Applying OpenMP to Histograms
 
 ### By: Alex Kazantsev and Hanumant Mahida
-### Date: Febuary 2th, 2017
+### Date: February 2th, 2017
 
 ## Implimentation & Results
 The most optimal technique to parallelize the histogram program was to impliment an OpenMP Pragma Reduction of the array. However, due to the configuration on Xunil, the version of OpenMP does not support reduction on arrays. Therefore we had to impliment something similar to what reduction does for an array. 
