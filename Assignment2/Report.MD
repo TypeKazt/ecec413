@@ -31,7 +31,7 @@ A normal pragma with parallel would render the incorrect histogram and sometimes
      for(i = 0; i < histogram_size; i++)
        priv_histo[i] = 0;
 
-     for(i = omp_get_thread_num()*seg; i < num_elements - (num_threads -                  omp_get_thread_num() - 1)*seg; i++)
+     for(i = omp_get_thread_num()*seg; i < num_elements - (num_threads - omp_get_thread_num() - 1)*seg; i++)
        priv_histo[input_data[i]]++;
 
      #pragma openmp critical
