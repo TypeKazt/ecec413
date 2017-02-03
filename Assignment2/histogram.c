@@ -24,8 +24,8 @@ void check_histogram(int *, int, int);
 int 
 main( int argc, char** argv) 
 {
-	//printf("argv[1]: %s", argv[1]);
-	//printf("argv[2]: %s", argv[2]);
+	printf("num_elements: %s\n", argv[1]);
+	printf("num_threads: %s\n", argv[2]);
 	if(argc < 2){
 		printf("Usage: histogram <num elements> \n");
 		exit(0);	
@@ -54,7 +54,7 @@ void run_test(int num_elements, int num_threads)
 	for(i = 0; i < num_elements; i++)
 		input_data[i] = floorf((HISTOGRAM_SIZE - 1) * (rand()/(float)RAND_MAX));
 
-	printf("Creating the reference histogram. \n"); 
+	//printf("Creating the reference histogram. \n"); 
 	// Compute the reference solution on the CPU
 	struct timeval start, stop;	
 	gettimeofday(&start, NULL);
@@ -67,19 +67,19 @@ void run_test(int num_elements, int num_threads)
 	
 	// Compute the histogram using openmp. The result histogram should be stored on the histogram_using_openmp array
 	printf("\n");
-	printf("Creating histogram using OpenMP. \n");
+	//printf("Creating histogram using OpenMP. \n");
 	gettimeofday(&start, NULL);
 	compute_using_openmp(input_data, histogram_using_openmp, num_elements, HISTOGRAM_SIZE, num_threads);
 	gettimeofday(&stop, NULL);
 	printf("OMP CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));	
-	check_histogram(histogram_using_openmp, num_elements, HISTOGRAM_SIZE);
+	//check_histogram(histogram_using_openmp, num_elements, HISTOGRAM_SIZE);
 
 	// Compute the differences between the reference and pthread results
 	diff = 0.0;
    for(i = 0; i < HISTOGRAM_SIZE; i++)
 		diff = diff + abs(reference_histogram[i] - histogram_using_openmp[i]);
 
-	printf("Difference between the reference and OpenMP results: %f. \n", diff);
+	//printf("Difference between the reference and OpenMP results: %f. \n", diff);
    
 	// cleanup memory
 	free(input_data);
