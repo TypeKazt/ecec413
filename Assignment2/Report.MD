@@ -70,3 +70,21 @@ A normal pragma with parallel would render the incorrect histogram and sometimes
 ![Image of Timing Graph for 100 Million Elements]
 (https://github.com/om23/ecec413/blob/master/Assignment2/timingGraph.png)
 
+
+
+
+
+### Extra Timing data
+
+| num_elements | num_threads | 0.0058 | | 0.0071 |
+| num_elements | num_threads | 0.0046 | | 0.0038 |
+| num_elements | num_threads | 0.0044 | | 0.0035 |
+| num_elements | num_threads | 0.0054 | | 0.0026 |
+| num_elements | num_threads | 0.0454 | | 0.0580 |
+| num_elements | num_threads | 0.0364 | | 0.0320 |
+| num_elements | num_threads | 0.0364 | | 0.0164 |
+| num_elements | num_threads | 0.0364 | | 0.0116 |
+| num_elements | num_threads | 0.3654 | | 0.4532 |
+| num_elements | num_threads | 0.3950 | | 0.2340 |
+| num_elements | num_threads | 0.4446 | | 0.1161 |
+| num_elements | num_threads | 0.3658 | | 0.0962 |
