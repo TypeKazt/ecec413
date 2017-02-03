@@ -41,3 +41,7 @@
 
 
 # Graph for 100,000,000 element Histogram
+
+![Image of Timing Graph for 100 Million Elements]
+(https://github.com/om23/ecec413/blob/master/Assignment2/timingGraph.png)
+
