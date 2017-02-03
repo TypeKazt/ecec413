@@ -11,13 +11,12 @@
 #include <float.h>
 #include <omp.h>
 
-void run_test(int);
+void run_test(int, int);
 void compute_gold(int *, int *, int, int);
-void compute_using_openmp(int *, int *, int, int);
+void compute_using_openmp(int *, int *, int, int, int);
 void check_histogram(int *, int, int);
 
 #define HISTOGRAM_SIZE 500
-#define NUM_THREADS 16
 
 ////////////////////////////////////////////////////////////////////////////////
 // Program main
@@ -25,19 +24,22 @@ void check_histogram(int *, int, int);
 int 
 main( int argc, char** argv) 
 {
-	if(argc != 2){
+	//printf("argv[1]: %s", argv[1]);
+	//printf("argv[2]: %s", argv[2]);
+	if(argc < 2){
 		printf("Usage: histogram <num elements> \n");
 		exit(0);	
 	}
 	int num_elements = atoi(argv[1]);
-	run_test(num_elements);
+	int num_threads = atoi(argv[2]);
+	run_test(num_elements, num_threads);
 	return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Generate the histogram in both single-threaded and multi-threaded fashion and compare results for correctness
 ////////////////////////////////////////////////////////////////////////////////
-void run_test(int num_elements) 
+void run_test(int num_elements, int num_threads) 
 {
 	double diff;
 	int i; 
@@ -67,7 +69,7 @@ void run_test(int num_elements)
 	printf("\n");
 	printf("Creating histogram using OpenMP. \n");
 	gettimeofday(&start, NULL);
-	compute_using_openmp(input_data, histogram_using_openmp, num_elements, HISTOGRAM_SIZE);
+	compute_using_openmp(input_data, histogram_using_openmp, num_elements, HISTOGRAM_SIZE, num_threads);
 	gettimeofday(&stop, NULL);
 	printf("OMP CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));	
 	check_histogram(histogram_using_openmp, num_elements, HISTOGRAM_SIZE);
@@ -101,12 +103,12 @@ void compute_gold(int *input_data, int *histogram, int num_elements, int histogr
 
 
 // Write the function to compute the histogram using openmp
-void compute_using_openmp(int *input_data, int *histogram, int num_elements, int histogram_size)
+void compute_using_openmp(int *input_data, int *histogram, int num_elements, int histogram_size, int num_threads)
 {
   int i, n;
   int* priv_histo;
-  omp_set_num_threads(NUM_THREADS);	
-  int seg = num_elements/NUM_THREADS;
+  omp_set_num_threads(num_threads);	
+  int seg = num_elements/num_threads;
 
   // Initialize histogram
   #pragma omp parallel shared(histogram, input_data) private(i)
@@ -119,14 +121,14 @@ void compute_using_openmp(int *input_data, int *histogram, int num_elements, int
   //#pragma omp parallel for shared(histogram, input_data) private(i) 
   //#pragma omp parallel for shared(histogram, input_data) private(i)
   #pragma omp parallel for shared(histogram, input_data, histogram_size, num_elements) private(n, i, priv_histo)
-  for(n = 0; n < NUM_THREADS; n++)
+  for(n = 0; n < num_threads; n++)
   {
     priv_histo = (int*) malloc(sizeof(int)*histogram_size);
 	
     for(i = 0; i < histogram_size; i++)
       priv_histo[i] = 0;
 	
-    for(i = omp_get_thread_num()*seg; i < num_elements - (NUM_THREADS - omp_get_thread_num() - 1)*seg; i++)
+    for(i = omp_get_thread_num()*seg; i < num_elements - (num_threads - omp_get_thread_num() - 1)*seg; i++)
       priv_histo[input_data[i]]++;
     
     #pragma openmp critical
