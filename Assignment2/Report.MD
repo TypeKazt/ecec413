@@ -77,15 +77,15 @@ A normal pragma with parallel would render the incorrect histogram and sometimes
 ### Extra Timing data
 | Number of Elements |	Number of Threads	| Serial Time (s)	| Parallel Time (s) |
 | ------------------|-------------|-----------------|-------------------|
-| num_elements | num_threads | 0.0058 | | 0.0071 |
-| num_elements | num_threads | 0.0046 | | 0.0038 |
-| num_elements | num_threads | 0.0044 | | 0.0035 |
-| num_elements | num_threads | 0.0054 | | 0.0026 |
-| num_elements | num_threads | 0.0454 | | 0.0580 |
-| num_elements | num_threads | 0.0364 | | 0.0320 |
-| num_elements | num_threads | 0.0364 | | 0.0164 |
-| num_elements | num_threads | 0.0364 | | 0.0116 |
-| num_elements | num_threads | 0.3654 | | 0.4532 |
-| num_elements | num_threads | 0.3950 | | 0.2340 |
-| num_elements | num_threads | 0.4446 | | 0.1161 |
-| num_elements | num_threads | 0.3658 | | 0.0962 |
+| 1000000 | 2 | 0.0058 | | 0.0077 |
+| 1000000 | 4 | 0.0046 | | 0.0039 |
+| 1000000 | 8 | 0.0054 | | 0.0026 |
+| 1000000 | 16 | 0.0053 | | 0.0025 |
+| 10000000 | 2 | 0.0458 | | 0.0565 |
+| 10000000 | 4 | 0.0364 | | 0.0300 |
+| 10000000 | 8 | 0.0364 | | 0.0147 |
+| 10000000 | 16 | 0.0439 | | 0.0141 |
+| 100000000 | 2 | 0.3634 | | 0.4132 |
+| 100000000 | 4 | 0.4433 | | 0.2319 |
+| 100000000 | 8 | 0.4412 | | 0.1071 |
+| 100000000 | 16 | 0.3643 | | 0.1029 |
