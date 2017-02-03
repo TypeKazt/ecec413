@@ -20,7 +20,7 @@ The initialization of the histogram is parallelized using a pragma since there a
    }
 ```
 
-A normal pragma with parallel would render the correct histogram and sometimes would show significantly worse results. In order to overcome this, reduction on the array was needed. First, memory was allocated for each of the threads using a malloc. For each thread, the histogram was split so the input_data could be processed in parallel without any memory overlaps. A Pragma Omp Critical was used to ensure all the input_data was processed and threads completed before movign on. In the last step all of the private histograms were put together. 
+A normal pragma with parallel would render the incorrect histogram and sometimes would show significantly worse results. In order to overcome this, reduction on the array was needed. First, memory was allocated for each of the threads using a malloc. For each thread, the histogram was split so the input_data could be processed in parallel without any memory overlaps. A Pragma Omp Critical was used to ensure all the input_data was processed and threads completed before movign on. In the last step all of the private histograms were put together. 
 
 ```C
 #pragma omp parallel for shared(histogram, input_data, histogram_size, num_elements)   private(n, i, priv_histo)
