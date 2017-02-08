@@ -20,11 +20,18 @@
 /* Function prototypes. */
 extern int compute_gold (float *, unsigned int);
 Matrix allocate_matrix (int num_rows, int num_columns, int init);
-void gauss_eliminate_using_pthreads (Matrix);
+void gauss_eliminate_using_pthreads (float *, unsigned int);
 int perform_simple_check (const Matrix);
 void print_matrix (const Matrix);
 float get_random_number (int, int);
 int check_results (float *, float *, unsigned int, float);
+
+struct s1 {
+int elements;
+int id;
+};
+
+void* reduceRow(void *s);
 
 
 int
@@ -65,7 +72,7 @@ main (int argc, char **argv)
   gettimeofday (&start, NULL);
   int status = compute_gold (U_reference.elements, A.num_rows);
   gettimeofday (&stop, NULL);
-  printf ("CPU run time = %0.2f s. \n",
+  printf ("CPU run time = %0.4f s. \n",
 	  (float) (stop.tv_sec - start.tv_sec +
 		   (stop.tv_usec - start.tv_usec) / (float) 1000000));
 
@@ -82,8 +89,14 @@ main (int argc, char **argv)
     }
   printf ("Single-threaded Gaussian elimination was successful. \n");
 
+  gettimeofday (&start, NULL);
   /* Perform the Gaussian elimination using pthreads. The resulting upper triangular matrix should be returned in U_mt */
-  gauss_eliminate_using_pthreads (U_mt);
+  gauss_eliminate_using_pthreads (U_mt.elements,  A.num_rows);
+  gettimeofday (&stop, NULL);
+  printf ("PThreads CPU run time = %0.4f s. \n",
+  (float) (stop.tv_sec - start.tv_sec +
+     (stop.tv_usec - start.tv_usec) / (float) 1000000));
+
 
   /* check if the pthread result is equivalent to the expected solution within a specified tolerance. */
   int size = MATRIX_SIZE * MATRIX_SIZE;
@@ -101,8 +114,78 @@ main (int argc, char **argv)
 
 /* Write code to perform gaussian elimination using pthreads. */
 void
-gauss_eliminate_using_pthreads (Matrix U)
+gauss_eliminate_using_pthreads (float *U, unsigned int num_elements)
 {
+  unsigned int elements;
+
+  for (elements = 0; elements < num_elements; elements++); // perform Gaussian elimination
+  {
+    pthread_t threads[num_elements];
+    int i, j, n, m;
+    struct s1* para = malloc(num_threads * sizeof(struct s1));
+    for (i = 0; i < num_threads; i++)
+    {
+      para[i].elements = elements;
+      para[i].id = i;
+      // creating num_threads pthreads
+      pthread_create(&threads[i], NULL, rowReduction, (void*) &para[i]);
+    }
+
+    for (j = 0; j < num_threads; j++)
+    {
+      pthread_join(threads[j], NULL);
+    }
+    //free(para); //FIXME: shouldn't do this here since I need it again, right??
+
+    // TODO: need a barrier or similar here
+
+    U[num_elements * elements + elements] = 1; // set principal diagonal in U to be 1
+
+    for (n = 0; n < num_threads; n++)
+    {
+      para[n].elements = elements;
+      para[n].elements = n;
+      // create num_threads pthreads
+      pthread_create(&threads[n], NULL, eliminationStep, (void*) &para[n]);
+    }
+
+    for (m = 0; m < num_threads; m++)
+    {
+      pthread_join(threads[m], NULL);
+    }
+    free(para);
+
+
+  }
+
+}
+
+
+void* rowReduction(void *s) {
+  int p;
+
+  for (p = elements + 1; p < num_elements; p++)
+  {
+    U[num_elements * elements + p] = (float) (U[num_elements * elements + p] / U[num_elements * elements + elements]); // division step
+  }
+
+  pthread_exit(0);
+}
+
+
+void* eliminationStep(void *s) {
+  int  b, c;
+
+  for (b = (elements + 1); b < num_elements; b++)
+  {
+    for (c = (elements + 1); b < num_elements; b++)
+    {
+      U[num_elements * b + c] = U[num_elements * b + c] - (U[num_elements * b + c] * U[num_elements * b + c]); // elimination step
+    }
+    U[num_elements * b + c] = 0;
+  }
+
+  pthread_exit;
 }
 
 
