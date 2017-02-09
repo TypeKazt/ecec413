@@ -117,7 +117,7 @@ main (int argc, char **argv)
 
 
 /* Write code to perform gaussian elimination using pthreads. */
-void gauss_eliminate_using_pthreads (float *U)
+void gauss_eliminate_using_pthreads (float *U_mt)
 {
   unsigned int elements;
 
@@ -142,7 +142,7 @@ void gauss_eliminate_using_pthreads (float *U)
 
     // TODO: need a barrier or similar here
 
-    U[num_elements * elements + elements] = 1; // set principal diagonal in U to be 1
+    U_mt[num_elements * elements + elements] = 1; // set principal diagonal in U to be 1
 
     for (n = 0; n < num_threads; n++)
     {
@@ -172,7 +172,7 @@ void *rowReduction(void *s) {
 
   for (p = elements + id; p < num_elements; p + num_threads)
   {
-    U[num_elements * elements + p] = (float) (U[num_elements * elements + p] / U[num_elements * elements + elements]); // division step
+    U_mt[num_elements * elements + p] = (float) (U_mt[num_elements * elements + p] / U_mt[num_elements * elements + elements]); // division step
   }
 
   pthread_exit(0);
@@ -189,9 +189,9 @@ void *eliminationStep(void *s) {
   {
     for (c = (elements + id); c < num_elements; c + num_threads)
     {
-      U[num_elements * b + c] = U[num_elements * b + c] - (U[num_elements * b + c] * U[num_elements * b + c]); // elimination step
+      U_mt[num_elements * b + c] = U_mt[num_elements * b + c] - (U_mt[num_elements * b + c] * U_mt[num_elements * b + c]); // elimination step
     }
-    U[num_elements * b + c] = 0;
+    U_mt[num_elements * b + c] = 0;
   }
 
   pthread_exit(0);
