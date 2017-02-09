@@ -170,7 +170,7 @@ void *rowReduction(void *s) {
   int elements = myStruct->elements;
   int id = myStruct->id;
 
-  for (p = elements + id; p < num_elements; p+num_threads)
+  for (p = elements + id; p < num_elements; p + num_threads)
   {
     U[num_elements * elements + p] = (float) (U[num_elements * elements + p] / U[num_elements * elements + elements]); // division step
   }
@@ -181,17 +181,20 @@ void *rowReduction(void *s) {
 
 void *eliminationStep(void *s) {
   int  b, c;
+  struct s1* myStruct = (struct s1*) s;
+  int elements = myStruct->elements;
+  int id = myStruct->id;
 
-  for (b = (elements + 1); b < num_elements; b++)
+  for (b = (elements + id); b < num_elements; b + num_threads)
   {
-    for (c = (elements + 1); b < num_elements; b++)
+    for (c = (elements + id); c < num_elements; c + num_threads)
     {
       U[num_elements * b + c] = U[num_elements * b + c] - (U[num_elements * b + c] * U[num_elements * b + c]); // elimination step
     }
     U[num_elements * b + c] = 0;
   }
 
-  pthread_exit;
+  pthread_exit(0);
 }
 
 
