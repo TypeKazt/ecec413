@@ -16,11 +16,15 @@
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
+#define num_threads 8
+#define num_elements MATRIX_SIZE
 
 /* Function prototypes. */
 extern int compute_gold (float *, unsigned int);
 Matrix allocate_matrix (int num_rows, int num_columns, int init);
-void gauss_eliminate_using_pthreads (float *, unsigned int);
+void gauss_eliminate_using_pthreads (float *);
+void *rowReduction (void *);
+void *eliminationStep (void *);
 int perform_simple_check (const Matrix);
 void print_matrix (const Matrix);
 float get_random_number (int, int);
@@ -91,7 +95,7 @@ main (int argc, char **argv)
 
   gettimeofday (&start, NULL);
   /* Perform the Gaussian elimination using pthreads. The resulting upper triangular matrix should be returned in U_mt */
-  gauss_eliminate_using_pthreads (U_mt.elements,  A.num_rows);
+  gauss_eliminate_using_pthreads (U_mt.elements);
   gettimeofday (&stop, NULL);
   printf ("PThreads CPU run time = %0.4f s. \n",
   (float) (stop.tv_sec - start.tv_sec +
@@ -113,12 +117,11 @@ main (int argc, char **argv)
 
 
 /* Write code to perform gaussian elimination using pthreads. */
-void
-gauss_eliminate_using_pthreads (float *U, unsigned int num_elements)
+void gauss_eliminate_using_pthreads (float *U)
 {
   unsigned int elements;
 
-  for (elements = 0; elements < num_elements; elements++); // perform Gaussian elimination
+  for (elements = 0; elements < num_elements; elements++) // perform Gaussian elimination
   {
     pthread_t threads[num_elements];
     int i, j, n, m;
@@ -128,7 +131,7 @@ gauss_eliminate_using_pthreads (float *U, unsigned int num_elements)
       para[i].elements = elements;
       para[i].id = i;
       // creating num_threads pthreads
-      pthread_create(&threads[i], NULL, rowReduction, (void*) &para[i]);
+      pthread_create(&threads[i], NULL, rowReduction, (void *)&para[i]);
     }
 
     for (j = 0; j < num_threads; j++)
@@ -144,9 +147,9 @@ gauss_eliminate_using_pthreads (float *U, unsigned int num_elements)
     for (n = 0; n < num_threads; n++)
     {
       para[n].elements = elements;
-      para[n].elements = n;
+      para[n].id = n;
       // create num_threads pthreads
-      pthread_create(&threads[n], NULL, eliminationStep, (void*) &para[n]);
+      pthread_create(&threads[n], NULL, eliminationStep, (void *)&para[n]);
     }
 
     for (m = 0; m < num_threads; m++)
@@ -161,10 +164,13 @@ gauss_eliminate_using_pthreads (float *U, unsigned int num_elements)
 }
 
 
-void* rowReduction(void *s) {
+void *rowReduction(void *s) {
   int p;
+  struct s1* myStruct = (struct s1*) s;
+  int elements = myStruct->elements;
+  int id = myStruct->id;
 
-  for (p = elements + 1; p < num_elements; p++)
+  for (p = elements + id; p < num_elements; p+num_threads)
   {
     U[num_elements * elements + p] = (float) (U[num_elements * elements + p] / U[num_elements * elements + elements]); // division step
   }
@@ -173,7 +179,7 @@ void* rowReduction(void *s) {
 }
 
 
-void* eliminationStep(void *s) {
+void *eliminationStep(void *s) {
   int  b, c;
 
   for (b = (elements + 1); b < num_elements; b++)
