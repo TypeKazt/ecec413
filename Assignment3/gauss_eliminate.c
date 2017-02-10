@@ -123,7 +123,7 @@ void gauss_eliminate_using_pthreads (float *U_mt)
 
   for (elements = 0; elements < num_elements; elements++) // perform Gaussian elimination
   {
-    pthread_t threads[num_elements];
+    pthread_t threads[num_threads];
     int i, j, n, m;
     struct s1* para = malloc(num_threads * sizeof(struct s1));
     for (i = 0; i < num_threads; i++)
