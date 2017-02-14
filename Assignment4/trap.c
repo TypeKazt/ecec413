@@ -22,6 +22,7 @@
 #include <math.h>
 #include <float.h>
 #include <time.h>
+#include <sys/time.h>
 #include <pthread.h>
 
 #define LEFT_ENDPOINT 5
@@ -50,11 +51,23 @@ int main(void)
 	float h = (b-a)/(float)n; // Height of each trapezoid  
 	printf("The height of the trapezoid is %f \n", h);
 
+	struct timeval start, stop;
+	gettimeofday (&start, NULL);
 	double reference = compute_gold(a, b, n, h);
-   printf("Reference solution computed on the CPU = %f \n", reference);
+	gettimeofday (&stop, NULL);
+	printf ("CPU run time = %0.4f s. \n",
+		(float) (stop.tv_sec - start.tv_sec +
+			(stop.tv_usec - start.tv_usec) / (float) 1000000));
+	printf("Solution computed in Serial = %f \n", reference);
+
 
 	/* Write this function to complete the trapezoidal on the GPU. */
+	gettimeofday (&start, NULL);
 	double pthread_result = compute_using_pthreads(a, b, n, h);
+	gettimeofday (&stop, NULL);
+	printf ("PThreads CPU run time = %0.4f s. \n",
+		(float) (stop.tv_sec - start.tv_sec +
+			(stop.tv_usec - start.tv_usec) / (float) 1000000));
 	printf("Solution computed using pthreads = %f \n", pthread_result);
 } 
 
@@ -142,8 +155,9 @@ void *trapCalc(void *s)
 
 	for (k = 1; k <= n-1; k++)
 	{
-		myStruct->integral += f(a+k*h);
+		integral += f(a+k*h);
 	}
+	myStruct->integral = integral;
 	//printf("Integral value inside function: %f \n", integral);
 
 	pthread_exit(0);
