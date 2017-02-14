@@ -22,11 +22,22 @@
 #include <math.h>
 #include <float.h>
 #include <time.h>
+#include <pthread.h>
 
 #define LEFT_ENDPOINT 5
 #define RIGHT_ENDPOINT 1000
 #define NUM_TRAPEZOIDS 100000000
 #define NUM_THREADS 4
+
+void *trapCalc (void *);
+
+struct s1 {
+	int id;
+	double integral;
+	float a;
+	int n;
+	float h;
+};
 
 double compute_using_pthreads(float, float, int, float);
 double compute_gold(float, float, int, float);
@@ -82,7 +93,60 @@ double compute_gold(float a, float b, int n, float h) {
 /* Complete this function to perform the trapezoidal rule on the GPU. */
 double compute_using_pthreads(float a, float b, int n, float h)
 {
-		  return 0.0;
+	double integral;
+	int i, j, z;
+
+    integral = (f(a) + f(b))/2.0;
+
+	pthread_t threads[NUM_THREADS];
+
+	struct s1* para = malloc(NUM_THREADS * sizeof(struct s1));
+
+	for (i = 0; i < NUM_THREADS; i++)
+	{
+		para[i].id = i;
+		para[i].integral = 0; // note: set as 0 since it would be redundant to calculate first integral for each thread 
+   		para[i].a = a;
+   		para[i].n = n;
+   		para[i].h = h;
+   		pthread_create(&threads[i], NULL, trapCalc, (void *)&para[i]);
+	}
+
+	for (j = 0; j < NUM_THREADS; j++)
+	{
+		//printf("thread id: %i, integral values: %f \n", para[j].id, para[j].integral);
+		pthread_join(threads[j], NULL);
+	}
+
+	// compute integral from struct para
+	for (z = 0; z < NUM_THREADS; z++)
+	{
+		integral += para[z].integral;
+	}
+
+	integral = integral*h;
+
+	return integral;
+}
+
+
+void *trapCalc(void *s) 
+{
+	int k;
+	struct s1* myStruct = (struct s1*) s;
+	int id = myStruct->id;
+	double integral = myStruct->integral;
+	float a = myStruct->a;
+	int n = myStruct->n;
+	float h = myStruct->h;
+
+	for (k = 1; k <= n-1; k++)
+	{
+		myStruct->integral += f(a+k*h);
+	}
+	//printf("Integral value inside function: %f \n", integral);
+
+	pthread_exit(0);
 }
 
 
