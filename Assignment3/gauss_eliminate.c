@@ -37,15 +37,16 @@ struct s1 {
 	float* mat;
 };
 
-void* reduceRow(void *s);
-void* pthread_wrapper(void *s);
-void barrier_sync(barrier_t *, int);
-
 typedef struct barrier_struct_tag{
     sem_t counter_sem; /* Protects access to the counter. */
     sem_t barrier_sem; /* Signals that barrier is safe to cross. */
     int counter; /* The value itself. */
 } barrier_t;
+
+void* reduceRow(void *s);
+void* pthread_wrapper(void *s);
+void barrier_sync(barrier_t *);
+
 
 int row_number = 0;
 int row_start = 0;
@@ -172,7 +173,7 @@ void gauss_eliminate_using_pthreads (float *U_mt)
   {
     row_number = elements;
     row_start = 1;
-	  barrier_sync(&elim_barrier); // FIXME needs thread number
+	  barrier_sync(&elim_barrier);
   }
 
 }
@@ -184,13 +185,13 @@ void* pthread_wrapper(void *s)
 	while(row_number < MATRIX_SIZE)
 	{
 		while(!row_start){}
-		barrier_sync(&redux_barrier, myStruct->id);
+		barrier_sync(&redux_barrier);
 		row_start = 0; //TODO fix, needs to only be done once
 		rowReduction(s);
-		barrier_sync(&redux_barrier); // FIXME needs thread number
+		barrier_sync(&redux_barrier); 
   		myStruct->mat[num_elements * row_number + row_number] = 1; //TODO fix, needs to be done only once
 		eliminationStep(s);
-		barrier_sync(&elim_barrier); // FIXME needs thread number
+		barrier_sync(&elim_barrier); 
 	}
 	pthread_exit(0);
 }
@@ -290,18 +291,18 @@ perform_simple_check (const Matrix M)
 
 /* The function that implements the barrier synchronization. */
 void 
-barrier_sync(barrier_t *barrier, int thread_number)
+barrier_sync(barrier_t *barrier)
 {
     sem_wait(&(barrier->counter_sem));
 
     /* Check if all threads before us, that is NUM_THREADS-1 threads have reached this point. */    
-    if(barrier->counter == (NUM_THREADS - 1)){
+    if(barrier->counter == (num_threads - 1)){
         barrier->counter = 0; /* Reset the counter. */
         sem_post(&(barrier->counter_sem)); 
            
         /* Signal the blocked threads that it is now safe to cross the barrier. */
-        printf("Thread number %d is signalling other threads to proceed. \n", thread_number); 
-        for(int i = 0; i < (NUM_THREADS - 1); i++)
+        //printf("Thread number %d is signalling other threads to proceed. \n", thread_number); 
+        for(int i = 0; i < (num_threads - 1); i++)
             sem_post(&(barrier->barrier_sem));
     } 
     else{
