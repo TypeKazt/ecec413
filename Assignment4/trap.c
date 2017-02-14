@@ -28,7 +28,7 @@
 #define LEFT_ENDPOINT 5
 #define RIGHT_ENDPOINT 1000
 #define NUM_TRAPEZOIDS 100000000
-#define NUM_THREADS 4
+#define NUM_THREADS 16
 
 void *trapCalc (void *);
 
@@ -153,7 +153,7 @@ void *trapCalc(void *s)
 	int n = myStruct->n;
 	float h = myStruct->h;
 
-	for (k = 1; k <= n-1; k++)
+	for (k = id; k <= n-1; k+=NUM_THREADS)
 	{
 		integral += f(a+k*h);
 	}
