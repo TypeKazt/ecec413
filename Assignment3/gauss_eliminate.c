@@ -23,20 +23,26 @@
 extern int compute_gold (float *, unsigned int);
 Matrix allocate_matrix (int num_rows, int num_columns, int init);
 void gauss_eliminate_using_pthreads (float *);
-void *rowReduction (void *);
-void *eliminationStep (void *);
+void rowReduction (void *);
+void eliminationStep (void *);
 int perform_simple_check (const Matrix);
 void print_matrix (const Matrix);
 float get_random_number (int, int);
 int check_results (float *, float *, unsigned int, float);
 
 struct s1 {
-int elements;
-int id;
+	int id;
+	float* mat;
 };
 
 void* reduceRow(void *s);
+void* pthread_wrapper(void *s);
 
+int row_number = 0;
+int row_start = 0;
+pthread_barrier_t redux_barrier;
+pthread_barrier_t elim_barrier;
+pthread_mutex_t* row_mutexs;
 
 int
 main (int argc, char **argv)
@@ -107,6 +113,8 @@ main (int argc, char **argv)
   int res = check_results (U_reference.elements, U_mt.elements, size, 0.001f);
   printf ("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
 
+  printf("row: %d\n", row_number);
+
   /* Free memory allocated for the matrices. */
   free (A.elements);
   free (U_reference.elements);
@@ -119,82 +127,86 @@ main (int argc, char **argv)
 /* Write code to perform gaussian elimination using pthreads. */
 void gauss_eliminate_using_pthreads (float *U_mt)
 {
-  unsigned int elements;
 
-  for (elements = 0; elements < num_elements; elements++) // perform Gaussian elimination
+  if(pthread_barrier_init(&redux_barrier, NULL, num_threads) || 
+	 pthread_barrier_init(&elim_barrier, NULL, num_threads+1))
   {
-    pthread_t threads[num_threads];
-    int i, j, n, m;
-    struct s1* para = malloc(num_threads * sizeof(struct s1));
-    for (i = 0; i < num_threads; i++)
-    {
-      para[i].elements = elements;
-      para[i].id = i;
-      // creating num_threads pthreads
-      pthread_create(&threads[i], NULL, rowReduction, (void *)&para[i]);
-    }
+    printf("Barrier creation failed\n");
+	exit(1);
+  }
 
-    for (j = 0; j < num_threads; j++)
-    {
-      pthread_join(threads[j], NULL);
-    }
-    //free(para); //FIXME: shouldn't do this here since I need it again, right??
+  //create threads
+  pthread_t threads[num_threads];
+  int i, j, n, m;
+  unsigned int elements;
+  struct s1* para = (struct s1*) malloc(num_threads * sizeof(struct s1));
+  for (i = 0; i < num_threads; i++)
+  {
+    para[i].mat = U_mt;
+    para[i].id = i;
+    // creating num_threads pthreads
+    pthread_create(&threads[i], NULL, pthread_wrapper, (void *)&para[i]);
+  }
 
-    // TODO: need a barrier or similar here
-
-    U_mt[num_elements * elements + elements] = 1; // set principal diagonal in U to be 1
-
-    for (n = 0; n < num_threads; n++)
-    {
-      para[n].elements = elements;
-      para[n].id = n;
-      // create num_threads pthreads
-      pthread_create(&threads[n], NULL, eliminationStep, (void *)&para[n]);
-    }
-
-    for (m = 0; m < num_threads; m++)
-    {
-      pthread_join(threads[m], NULL);
-    }
-    free(para);
-
-
+  //main thread row loop
+  for(elements=0; elements < num_elements; elements++)
+  {
+    row_number = elements;
+    row_start = 1;
+	pthread_barrier_wait(&elim_barrier);
   }
 
 }
 
 
-void *rowReduction(void *s) {
+void* pthread_wrapper(void *s)
+{
+    struct s1* myStruct = (struct s1*) s;
+	while(row_number < MATRIX_SIZE)
+	{
+		while(!row_start){}
+		pthread_barrier_wait(&redux_barrier);
+		row_start = 0; //TODO fix, needs to only be done once
+		rowReduction(s);
+		pthread_barrier_wait(&redux_barrier);
+  		myStruct->mat[num_elements * row_number + row_number] = 1; //TODO fix, needs to be done only once
+		eliminationStep(s);
+		pthread_barrier_wait(&elim_barrier);
+	}
+	pthread_exit(0);
+}
+
+void rowReduction(void *s) {
   int p;
   struct s1* myStruct = (struct s1*) s;
-  int elements = myStruct->elements;
+  int elements = row_number;
   int id = myStruct->id;
+  float* U_mt = myStruct->mat;
 
-  for (p = elements + id; p < num_elements; p + num_threads)
+  for (p = elements+id+1; p < num_elements; p += num_threads)
   {
     U_mt[num_elements * elements + p] = (float) (U_mt[num_elements * elements + p] / U_mt[num_elements * elements + elements]); // division step
   }
-
-  pthread_exit(0);
+  //U_mt[num_elements * elements + elements] = 1; //TODO fix, needs to be done only once
 }
 
 
-void *eliminationStep(void *s) {
+void eliminationStep(void *s) {
   int  b, c;
   struct s1* myStruct = (struct s1*) s;
-  int elements = myStruct->elements;
+  int elements = row_number;
   int id = myStruct->id;
+  float* U_mt = myStruct->mat;
 
-  for (b = (elements + id); b < num_elements; b + num_threads)
+  for (b = (elements + id)+1; b < num_elements; b += num_threads)
   {
-    for (c = (elements + id); c < num_elements; c + num_threads)
+    for (c = elements+1; c < num_elements; c++)
     {
-      U_mt[num_elements * b + c] = U_mt[num_elements * b + c] - (U_mt[num_elements * b + c] * U_mt[num_elements * b + c]); // elimination step
+      U_mt[num_elements * b + c] = U_mt[num_elements * b + c] - (U_mt[num_elements * b + elements] * U_mt[num_elements * elements + c]); // elimination step
     }
-    U_mt[num_elements * b + c] = 0;
+    U_mt[num_elements * b + elements] = 0;
   }
 
-  pthread_exit(0);
 }
 
 
@@ -204,7 +216,11 @@ check_results (float *A, float *B, unsigned int size, float tolerance)
 {
   for (int i = 0; i < size; i++)
     if (fabsf (A[i] - B[i]) > tolerance)
+	{
+	  printf("fialed elm:%d\n", i);
+	  printf("A[i]: %f  B[i]: %f\n", A[i], B[i]);
       return 0;
+	}
   return 1;
 }
 
