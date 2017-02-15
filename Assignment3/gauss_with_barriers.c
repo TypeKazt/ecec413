@@ -2,7 +2,7 @@
  * Author: Naga Kandasamy
  * Date created: 02/07/2014
  * Date of last update: 01/30/2017
- * Compile as follows: gcc -o gauss_eliminate gauss_eliminate.c compute_gold.c -lpthread -std=c99 -lm
+ * Compile as follows: gcc -o gauss_eliminate gauss_eliminate.c compute_gold.c -lpthread -std=gnu99 -lm
  */
 
 #include <stdlib.h>
@@ -17,7 +17,7 @@
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
-#define num_threads 2
+#define num_threads 32
 #define num_elements MATRIX_SIZE
 
 
@@ -53,7 +53,7 @@ int row_number = 0;
 int row_start = 0;
 barrier_t p_barrier;
 barrier_t p2_barrier;
-pthread_mutex_t* row_mutexs;
+pthread_barrier_t barrier;
 
 int
 main (int argc, char **argv)
@@ -139,24 +139,24 @@ main (int argc, char **argv)
 void gauss_eliminate_using_pthreads (float *U_mt)
 {
 
- //  if(pthread_barrier_init(&redux_barrier, NULL, num_threads) || 
-	//  pthread_barrier_init(&elim_barrier, NULL, num_threads+1))
- //  {
- //    printf("Barrier creation failed\n");
-	// exit(1);
- //  }
+ if(pthread_barrier_init(&barrier, NULL, num_threads+1))
+ {
+    printf("Barrier creation failed\n");
+	exit(1);
+ }
 
   /* Initialize the barrier data structure. */
+/*
   p_barrier.counter = 0;
   p_barrier.num_calls = num_threads + 1;
-  sem_init(&p_barrier.counter_sem, 0, 1); /* Initialize the semaphore protecting the counter to unlocked. */
-  sem_init(&p_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
+  sem_init(&p_barrier.counter_sem, 0, 1); 
+  sem_init(&p_barrier.barrier_sem, 0, 0); 
 
   p2_barrier.counter = 0;
   p2_barrier.num_calls = num_threads;
-  sem_init(&p2_barrier.counter_sem, 0, 1); /* Initialize the semaphore protecting the counter to unlocked. */
-  sem_init(&p2_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
-
+  sem_init(&p2_barrier.counter_sem, 0, 1); 
+  sem_init(&p2_barrier.barrier_sem, 0, 0); 
+*/
 
 
   //create threads
@@ -176,12 +176,14 @@ void gauss_eliminate_using_pthreads (float *U_mt)
   for(elements=0; elements < num_elements; elements++)
   {
     row_number = elements;
-	barrier_sync(&p_barrier, 404);
-    //row_start = 1;
-    barrier_sync(&p_barrier, 404);
+	//barrier_sync(&p_barrier, 404);
+    //barrier_sync(&p_barrier, 404);
+    pthread_barrier_wait(&barrier);
+    pthread_barrier_wait(&barrier);
     U_mt[num_elements * elements + elements] = 1; //TODO fix, needs to be done only once
     //printf("main row: %d \n", row_number);
-    barrier_sync(&p_barrier, 404);
+    //barrier_sync(&p_barrier, 404);
+    pthread_barrier_wait(&barrier);
    
   }
 }
@@ -192,18 +194,19 @@ void* pthread_wrapper(void *s)
   struct s1* myStruct = (struct s1*) s;
 	while(row_number < MATRIX_SIZE)
 	{
-		//while(!row_start){}
-		//barrier_sync(&p2_barrier, 403);
-		barrier_sync(&p_barrier, 403);
+		//barrier_sync(&p_barrier, 403);
+    	pthread_barrier_wait(&barrier);
 		//printf("thread_id: %d\n", myStruct->id);
 		//row_start = 0; //TODO fix, needs to only be done once
     //printf("thread row: %d \n", row_number);
 		rowReduction(s);
 //		printf("salsa id: %d\n", myStruct->id);
-		barrier_sync(&p_barrier, myStruct->id);
+		//barrier_sync(&p_barrier, myStruct->id);
+    	pthread_barrier_wait(&barrier);
 //		printf("taco id: %d\n", myStruct->id);
     		eliminationStep(s);
-		barrier_sync(&p_barrier, 402); 
+		//barrier_sync(&p_barrier, 402); 
+    	pthread_barrier_wait(&barrier);
 	}
 	pthread_exit(0);
 }
