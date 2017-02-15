@@ -11,10 +11,10 @@ W/out barriers compile as follows: gcc -o gauss_without_barriers gauss_without_b
 ## Results
 
 ![PThreads Barriers Timing Graph for 4096x4096 Matrix]
- (https://github.com/om23/ecec413/blob/master/Assignment4/barriersTiming.png)
+ (https://github.com/om23/ecec413/blob/master/Assignment3/barriersTiming.png)
 
  ![PThreads w/out Barriers Timing Graph for 4096x4096 Matrix]
- (https://github.com/om23/ecec413/blob/master/Assignment4/pthreadsTiming.png)
+ (https://github.com/om23/ecec413/blob/master/Assignment3/pthreadsTiming.png)
 
 ## Code
 
