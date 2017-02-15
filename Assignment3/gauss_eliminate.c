@@ -46,7 +46,7 @@ typedef struct barrier_struct_tag{
 
 void* reduceRow(void *s);
 void* pthread_wrapper(void *s);
-void barrier_sync(barrier_t *);
+void barrier_sync(barrier_t *, int);
 
 
 int row_number = 0;
@@ -149,12 +149,12 @@ void gauss_eliminate_using_pthreads (float *U_mt)
   /* Initialize the barrier data structure. */
   p_barrier.counter = 0;
   p_barrier.num_calls = num_threads + 1;
-  sem_init(&p_barrier.counter_sem, 0, 0); /* Initialize the semaphore protecting the counter to unlocked. */
+  sem_init(&p_barrier.counter_sem, 0, 1); /* Initialize the semaphore protecting the counter to unlocked. */
   sem_init(&p_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
 
   p2_barrier.counter = 0;
   p2_barrier.num_calls = num_threads;
-  sem_init(&p2_barrier.counter_sem, 0, 0); /* Initialize the semaphore protecting the counter to unlocked. */
+  sem_init(&p2_barrier.counter_sem, 0, 1); /* Initialize the semaphore protecting the counter to unlocked. */
   sem_init(&p2_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
 
 
@@ -176,11 +176,13 @@ void gauss_eliminate_using_pthreads (float *U_mt)
   for(elements=0; elements < num_elements; elements++)
   {
     row_number = elements;
-    row_start = 1;
-    barrier_sync(&p_barrier);
+	barrier_sync(&p_barrier, 404);
+    //row_start = 1;
+    barrier_sync(&p_barrier, 404);
     U_mt[num_elements * elements + elements] = 1; //TODO fix, needs to be done only once
     //printf("main row: %d \n", row_number);
-    barrier_sync(&p_barrier);
+    barrier_sync(&p_barrier, 404);
+   
   }
 }
 
@@ -190,14 +192,18 @@ void* pthread_wrapper(void *s)
   struct s1* myStruct = (struct s1*) s;
 	while(row_number < MATRIX_SIZE)
 	{
-		while(!row_start){}
-		barrier_sync(&p2_barrier);
-		row_start = 0; //TODO fix, needs to only be done once
+		//while(!row_start){}
+		//barrier_sync(&p2_barrier, 403);
+		barrier_sync(&p_barrier, 403);
+		//printf("thread_id: %d\n", myStruct->id);
+		//row_start = 0; //TODO fix, needs to only be done once
     //printf("thread row: %d \n", row_number);
 		rowReduction(s);
-		barrier_sync(&p_barrier);
-    eliminationStep(s);
-		barrier_sync(&p_barrier); 
+//		printf("salsa id: %d\n", myStruct->id);
+		barrier_sync(&p_barrier, myStruct->id);
+//		printf("taco id: %d\n", myStruct->id);
+    		eliminationStep(s);
+		barrier_sync(&p_barrier, 402); 
 	}
 	pthread_exit(0);
 }
@@ -208,13 +214,13 @@ void rowReduction(void *s) {
   int elements = row_number;
   int id = myStruct->id;
   float* U_mt = myStruct->mat;
-  printf("NUM_THREADS: %d, %d \n", num_threads, num_elements);
-  printf("Elements: %d\n", elements);
+  //printf("NUM_THREADS: %d, %d \n", num_threads, num_elements);
+  //printf("Elements: %d\n", elements);
   for (p = elements+id+1; p < num_elements;)
   {
     U_mt[num_elements * elements + p] = (float) (U_mt[num_elements * elements + p] / U_mt[num_elements * elements + elements]); // division step
-    printf("U_mt element: %f \n", U_mt[num_elements * elements + p]);
-    printf("p: %d, thread_id %d, \n", p, id);
+    //printf("U_mt element: %f \n", U_mt[num_elements * elements + p]);
+    //printf("p: %d, thread_id %d, \n", p, id);
     p += num_threads;
   }
   //U_mt[num_elements * elements + elements] = 1; //TODO fix, needs to be done only once
@@ -228,13 +234,15 @@ void eliminationStep(void *s) {
   int id = myStruct->id;
   float* U_mt = myStruct->mat;
 
-  for (b = (elements + id)+1; b < num_elements; b += num_threads)
+  for (b = (elements + id)+1; b < num_elements; )
   {
     for (c = elements+1; c < num_elements; c++)
     {
       U_mt[num_elements * b + c] = U_mt[num_elements * b + c] - (U_mt[num_elements * b + elements] * U_mt[num_elements * elements + c]); // elimination step
     }
     U_mt[num_elements * b + elements] = 0;
+    //printf("b: %d, num_elements: %d \n", b, num_elements);
+    b += num_threads;
   }
 
 }
@@ -301,10 +309,10 @@ perform_simple_check (const Matrix M)
 
 /* The function that implements the barrier synchronization. */
 void 
-barrier_sync(barrier_t *barrier)
+barrier_sync(barrier_t *barrier, int id)
 {
     sem_wait(&(barrier->counter_sem));
-
+  //  printf("barrier thread id: %d\n", id);
     /* Check if all threads before us, that is NUM_THREADS-1 threads have reached this point. */    
     if(barrier->counter == (barrier->num_calls - 1)){
         barrier->counter = 0; /* Reset the counter. */
