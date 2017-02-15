@@ -17,7 +17,7 @@
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
-#define num_threads 8
+#define num_threads 2
 #define num_elements MATRIX_SIZE
 
 
@@ -41,6 +41,7 @@ typedef struct barrier_struct_tag{
     sem_t counter_sem; /* Protects access to the counter. */
     sem_t barrier_sem; /* Signals that barrier is safe to cross. */
     int counter; /* The value itself. */
+    int num_calls; 
 } barrier_t;
 
 void* reduceRow(void *s);
@@ -50,8 +51,8 @@ void barrier_sync(barrier_t *);
 
 int row_number = 0;
 int row_start = 0;
-barrier_t redux_barrier;
-barrier_t elim_barrier;
+barrier_t p_barrier;
+barrier_t p2_barrier;
 pthread_mutex_t* row_mutexs;
 
 int
@@ -146,13 +147,16 @@ void gauss_eliminate_using_pthreads (float *U_mt)
  //  }
 
   /* Initialize the barrier data structure. */
-  redux_barrier.counter = 0;
-  sem_init(&redux_barrier.counter_sem, 0, 1); /* Initialize the semaphore protecting the counter to unlocked. */
-  sem_init(&redux_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
+  p_barrier.counter = 0;
+  p_barrier.num_calls = num_threads + 1;
+  sem_init(&p_barrier.counter_sem, 0, 0); /* Initialize the semaphore protecting the counter to unlocked. */
+  sem_init(&p_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
 
-  elim_barrier.counter = 0;
-  sem_init(&elim_barrier.counter_sem, 0, 1); /* Initialize the semaphore protecting the counter to unlocked. */
-  sem_init(&elim_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
+  p2_barrier.counter = 0;
+  p2_barrier.num_calls = num_threads;
+  sem_init(&p2_barrier.counter_sem, 0, 0); /* Initialize the semaphore protecting the counter to unlocked. */
+  sem_init(&p2_barrier.barrier_sem, 0, 0); /* Initialize the semaphore protecting the barrier to locked. */
+
 
 
   //create threads
@@ -173,25 +177,27 @@ void gauss_eliminate_using_pthreads (float *U_mt)
   {
     row_number = elements;
     row_start = 1;
-	  barrier_sync(&elim_barrier);
+    barrier_sync(&p_barrier);
+    U_mt[num_elements * elements + elements] = 1; //TODO fix, needs to be done only once
+    //printf("main row: %d \n", row_number);
+    barrier_sync(&p_barrier);
   }
-
 }
 
 
 void* pthread_wrapper(void *s)
 {
-    struct s1* myStruct = (struct s1*) s;
+  struct s1* myStruct = (struct s1*) s;
 	while(row_number < MATRIX_SIZE)
 	{
 		while(!row_start){}
-		barrier_sync(&redux_barrier);
+		barrier_sync(&p2_barrier);
 		row_start = 0; //TODO fix, needs to only be done once
+    //printf("thread row: %d \n", row_number);
 		rowReduction(s);
-		barrier_sync(&redux_barrier); 
-  		myStruct->mat[num_elements * row_number + row_number] = 1; //TODO fix, needs to be done only once
-		eliminationStep(s);
-		barrier_sync(&elim_barrier); 
+		barrier_sync(&p_barrier);
+    eliminationStep(s);
+		barrier_sync(&p_barrier); 
 	}
 	pthread_exit(0);
 }
@@ -202,10 +208,14 @@ void rowReduction(void *s) {
   int elements = row_number;
   int id = myStruct->id;
   float* U_mt = myStruct->mat;
-
-  for (p = elements+id+1; p < num_elements; p += num_threads)
+  printf("NUM_THREADS: %d, %d \n", num_threads, num_elements);
+  printf("Elements: %d\n", elements);
+  for (p = elements+id+1; p < num_elements;)
   {
     U_mt[num_elements * elements + p] = (float) (U_mt[num_elements * elements + p] / U_mt[num_elements * elements + elements]); // division step
+    printf("U_mt element: %f \n", U_mt[num_elements * elements + p]);
+    printf("p: %d, thread_id %d, \n", p, id);
+    p += num_threads;
   }
   //U_mt[num_elements * elements + elements] = 1; //TODO fix, needs to be done only once
 }
@@ -237,7 +247,7 @@ check_results (float *A, float *B, unsigned int size, float tolerance)
   for (int i = 0; i < size; i++)
     if (fabsf (A[i] - B[i]) > tolerance)
 	{
-	  printf("fialed elm:%d\n", i);
+	  printf("failed elm: %d\n", i);
 	  printf("A[i]: %f  B[i]: %f\n", A[i], B[i]);
       return 0;
 	}
@@ -296,13 +306,13 @@ barrier_sync(barrier_t *barrier)
     sem_wait(&(barrier->counter_sem));
 
     /* Check if all threads before us, that is NUM_THREADS-1 threads have reached this point. */    
-    if(barrier->counter == (num_threads - 1)){
+    if(barrier->counter == (barrier->num_calls - 1)){
         barrier->counter = 0; /* Reset the counter. */
         sem_post(&(barrier->counter_sem)); 
            
         /* Signal the blocked threads that it is now safe to cross the barrier. */
         //printf("Thread number %d is signalling other threads to proceed. \n", thread_number); 
-        for(int i = 0; i < (num_threads - 1); i++)
+        for(int i = 0; i < (barrier->num_calls - 1); i++)
             sem_post(&(barrier->barrier_sem));
     } 
     else{
