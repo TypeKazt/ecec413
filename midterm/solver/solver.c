@@ -16,10 +16,12 @@ gcc -o solver solver.c solver_gold.c -fopenmp -std=c99 -lm -lpthread
 #include <math.h>
 #include "grid.h" // This file defines the grid data structure
 
+#define num_threads 8
 
 extern int compute_gold(GRID_STRUCT *);
 int compute_using_openmp_jacobi(GRID_STRUCT *);
 int compute_using_openmp_red_black(GRID_STRUCT *);
+
 
 /* This function prints the grid on the screen */
 void display_grid(GRID_STRUCT *my_grid)
@@ -86,13 +88,15 @@ int compute_using_openmp_jacobi(GRID_STRUCT *grid_2)
 int compute_using_openmp_red_black(GRID_STRUCT *grid_3)
 {
     int num_iter = 0;
-	int done = 0;
-	float diff;
-	float temp;
+    int done = 0;
+    float diff;
+    float temp;
+	omp_set_num_threads(num_threads);
 
 	while(!done){
 		diff = 0;
 		for(int i = 1; i < (grid_3->dimension-1); i++){
+			#pragma omp parallel default(none) shared(grid_3)
 			for(int j = 1; j < (grid_3->dimension-1); j++){
 				temp = grid_3->element[i * grid_3->dimension + j];
 				grid_3->element[i * grid_3->dimension + j] = 0.20*(grid_3->element[i * grid_3->dimension + j] + 
@@ -107,14 +111,6 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_3)
 		if((float)diff/((float)(grid_3->dimension*grid_3->dimension)) < (float)TOLERANCE) done = 1;
 	}
 	return num_iter;
-	
-	
-
-
-
-
-
-	return 0;		
 }
 
 		
