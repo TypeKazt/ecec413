@@ -95,12 +95,12 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_3)
 		for(int i = 1; i < (grid_3->dimension-1); i++){
 			for(int j = 1; j < (grid_3->dimension-1); j++){
 				temp = grid_3->element[i * grid_3->dimension + j];
-				my_grid->element[i * grid_3->dimension + j] = 0.20*(grid_3->element[i * grid_3->dimension + j] + 
+				grid_3->element[i * grid_3->dimension + j] = 0.20*(grid_3->element[i * grid_3->dimension + j] + 
 										grid_3->element[(i - 1) * grid_3->dimension + j] +
 										grid_3->element[(i + 1) * grid_3->dimension + j] +
 										grid_3->element[i * grid_3->dimension + (j + 1)] +
 										grid_3->element[i * grid_3->dimension + (j - 1)]);
-				diff = diff + fabs(grid_3->element[i * grid_3->dimension + k] - temp);
+				diff = diff + fabs(grid_3->element[i * grid_3->dimension + j] - temp);
 			}
 		}
 		num_iter++;
