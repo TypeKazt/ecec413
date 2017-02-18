@@ -18,8 +18,8 @@ gcc -o solver solver.c solver_gold.c -fopenmp -std=c99 -lm -lpthread
 
 
 extern int compute_gold(GRID_STRUCT *);
-int compute_using_pthread_jacobi(GRID_STRUCT *);
-int compute_using_pthread_red_black(GRID_STRUCT *);
+int compute_using_openmp_jacobi(GRID_STRUCT *);
+int compute_using_openmp_red_black(GRID_STRUCT *);
 
 /* This function prints the grid on the screen */
 void display_grid(GRID_STRUCT *my_grid)
@@ -77,14 +77,43 @@ void create_grids(GRID_STRUCT *grid_1, GRID_STRUCT *grid_2, GRID_STRUCT *grid_3)
 }
 
 /* Edit this function to use the jacobi method of solving the equation. The final result should be placed in the final_grid_1 data structure */
-int compute_using_pthread_jacobi(GRID_STRUCT *grid_2)
+int compute_using_openmp_jacobi(GRID_STRUCT *grid_2)
 {
 	return 0;		
 }
 
 /* Edit this function to use the red-black method of solving the equation. The final result should be placed in the final_grid_2 data structure */
-int compute_using_pthread_red_black(GRID_STRUCT *grid_3)
+int compute_using_openmp_red_black(GRID_STRUCT *grid_3)
 {
+    int num_iter = 0;
+	int done = 0;
+	float diff;
+	float temp;
+
+	while(!done){
+		diff = 0;
+		for(int i = 1; i < (grid_3->dimension-1); i++){
+			for(int j = 1; j < (grid_3->dimension-1); j++){
+				temp = grid_3->element[i * grid_3->dimension + j];
+				my_grid->element[i * grid_3->dimension + j] = 0.20*(grid_3->element[i * grid_3->dimension + j] + 
+										grid_3->element[(i - 1) * grid_3->dimension + j] +
+										grid_3->element[(i + 1) * grid_3->dimension + j] +
+										grid_3->element[i * grid_3->dimension + (j + 1)] +
+										grid_3->element[i * grid_3->dimension + (j - 1)]);
+				diff = diff + fabs(grid_3->element[i * grid_3->dimension + k] - temp);
+			}
+		}
+		num_iter++;
+		if((float)diff/((float)(grid_3->dimension*grid_3->dimension)) < (float)TOLERANCE) done = 1;
+	}
+	return num_iter;
+	
+	
+
+
+
+
+
 	return 0;		
 }
 
@@ -115,13 +144,13 @@ int main(int argc, char **argv)
 	
 	// Use pthreads to solve the equation uisng the red-black parallelization technique
 	printf("Using the pthread implementation to solve the grid using the red-black parallelization method. \n");
-	num_iter = compute_using_pthread_red_black(grid_2);
+	num_iter = compute_using_openmp_red_black(grid_2);
 	printf("Convergence achieved after %d iterations. \n", num_iter);
 
 	
 	// Use pthreads to solve the equation using the jacobi method in parallel
 	printf("Using the pthread implementation to solve the grid using the jacobi method. \n");
-	num_iter = compute_using_pthread_jacobi(grid_3);
+	num_iter = compute_using_openmp_jacobi(grid_3);
 	printf("Convergence achieved after %d iterations. \n", num_iter);
 
 

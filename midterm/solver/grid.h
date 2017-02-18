@@ -1,7 +1,7 @@
 #ifndef __GRID_STRUCT__
 #define __GRID_STRUCT__
 
-#define GRID_DIMENSION 8192
+#define GRID_DIMENSION 16 //8192
 #define TOLERANCE 0.01 // Tolerance value for convergence
 #define UPPER_BOUND_ON_GRID_VALUE 100 // The largest value in the grid
 
