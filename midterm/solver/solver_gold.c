@@ -13,7 +13,7 @@ int compute_gold(GRID_STRUCT *my_grid)
 	float temp; 
 	
 	while(!done){ // While we have not converged yet 
-		printf("Iteration %d; ", num_iter);
+		//printf("Iteration %d; ", num_iter);
 		diff = 0;	
 		for(int i = 1; i < (my_grid->dimension-1); i++){
 			for(int j = 1; j < (my_grid->dimension-1); j++){
@@ -29,7 +29,7 @@ int compute_gold(GRID_STRUCT *my_grid)
 		}
 		/* End of an iteration. Check for convergence */
 		num_iter++;
-		printf("diff = %f \n", diff);
+		//printf("diff = %f \n", diff);
 		if((float)diff/((float)(my_grid->dimension*my_grid->dimension)) < (float)TOLERANCE) done = 1;
 	}
 	return num_iter;

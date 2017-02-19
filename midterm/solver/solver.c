@@ -1,5 +1,5 @@
 /* 
-Code for the equation solver. 
+   Code for the equation solver. 
 Author: Naga Kandasamy 
 Date: 5/7/2013
 
@@ -29,26 +29,26 @@ void display_grid(GRID_STRUCT *my_grid)
 	for(int i = 0; i < my_grid->dimension; i++)
 		for(int j = 0; j < my_grid->dimension; j++)
 			printf("%f \t", my_grid->element[i * my_grid->dimension + j]);
-   		
-		printf("\n");
+
+	printf("\n");
 }
 
 
 // This function prints out statistics for the converged values, including min, max, and average. */
 void print_statistics(GRID_STRUCT *my_grid)
 {
-		// Print statistics for the CPU grid
-		float min = INFINITY;
-		float max = 0.0;
-		double sum = 0.0; 
-		for(int i = 0; i < my_grid->dimension; i++){
-			for(int j = 0; j < my_grid->dimension; j++){
-				sum += my_grid->element[i * my_grid->dimension + j]; // Compute the sum
-				if(my_grid->element[i * my_grid->dimension + j] > max) max = my_grid->element[i * my_grid->dimension + j]; // Determine max
-				if(my_grid->element[i * my_grid->dimension + j] < min) min = my_grid->element[i * my_grid->dimension + j]; // Determine min
-				 
-			}
+	// Print statistics for the CPU grid
+	float min = INFINITY;
+	float max = 0.0;
+	double sum = 0.0; 
+	for(int i = 0; i < my_grid->dimension; i++){
+		for(int j = 0; j < my_grid->dimension; j++){
+			sum += my_grid->element[i * my_grid->dimension + j]; // Compute the sum
+			if(my_grid->element[i * my_grid->dimension + j] > max) max = my_grid->element[i * my_grid->dimension + j]; // Determine max
+			if(my_grid->element[i * my_grid->dimension + j] < min) min = my_grid->element[i * my_grid->dimension + j]; // Determine min
+
 		}
+	}
 
 	printf("AVG: %f \n", sum/(float)my_grid->num_elements);
 	printf("MIN: %f \n", min);
@@ -66,7 +66,7 @@ void create_grids(GRID_STRUCT *grid_1, GRID_STRUCT *grid_2, GRID_STRUCT *grid_3)
 	grid_3->element = (float *)malloc(sizeof(float) * grid_3->num_elements);
 
 	srand((unsigned)time(NULL)); // Seed the the random number generator 
-	
+
 	float val;
 	for(int i = 0; i < grid_1->dimension; i++)
 		for(int j = 0; j < grid_1->dimension; j++){
@@ -74,46 +74,48 @@ void create_grids(GRID_STRUCT *grid_1, GRID_STRUCT *grid_2, GRID_STRUCT *grid_3)
 			grid_1->element[i * grid_1->dimension + j] = val; 	
 			grid_2->element[i * grid_2->dimension + j] = val; 
 			grid_3->element[i * grid_3->dimension + j] = val; 
-			
+
 		}
 }
 
 /* Edit this function to use the jacobi method of solving the equation. The final result should be placed in the final_grid_1 data structure */
 int compute_using_openmp_jacobi(GRID_STRUCT *grid_2)
 {
-	return 0;		
+	int num_iter = 0;
+	int done = 0;
+	float diff;
+	float temp;
+	unsigned i, j;
+	omp_set_num_threads(num_threads);
+
+	#pragma omp parallel private(i, j) shared(grid_2)
+	while(!done){
+		diff = 0;
+
+		for(int i = 1; i < (grid_2->dimension-1); i++){
+			for(int j = 1; j < (grid_2->dimension-1); j++){
+				temp = grid_2->element[i * grid_2->dimension + j];
+				grid_2->element[i * grid_2->dimension + j] = 0.20*(grid_2->element[i * grid_2->dimension + j] + 
+						grid_2->element[(i - 1) * grid_2->dimension + j] +
+						grid_2->element[(i + 1) * grid_2->dimension + j] +
+						grid_2->element[i * grid_2->dimension + (j + 1)] +
+						grid_2->element[i * grid_2->dimension + (j - 1)]);
+				diff = diff + fabs(grid_2->element[i * grid_2->dimension + j] - temp);
+			}
+		}
+		num_iter++;
+		if((float)diff/((float)(grid_2->dimension*grid_2->dimension)) < (float)TOLERANCE) done = 1;
+	}
+	return num_iter;
 }
 
 /* Edit this function to use the red-black method of solving the equation. The final result should be placed in the final_grid_2 data structure */
 int compute_using_openmp_red_black(GRID_STRUCT *grid_3)
 {
-    int num_iter = 0;
-    int done = 0;
-    float diff;
-    float temp;
-	omp_set_num_threads(num_threads);
-
-	while(!done){
-		diff = 0;
-		for(int i = 1; i < (grid_3->dimension-1); i++){
-			#pragma omp parallel default(none) shared(grid_3)
-			for(int j = 1; j < (grid_3->dimension-1); j++){
-				temp = grid_3->element[i * grid_3->dimension + j];
-				grid_3->element[i * grid_3->dimension + j] = 0.20*(grid_3->element[i * grid_3->dimension + j] + 
-										grid_3->element[(i - 1) * grid_3->dimension + j] +
-										grid_3->element[(i + 1) * grid_3->dimension + j] +
-										grid_3->element[i * grid_3->dimension + (j + 1)] +
-										grid_3->element[i * grid_3->dimension + (j - 1)]);
-				diff = diff + fabs(grid_3->element[i * grid_3->dimension + j] - temp);
-			}
-		}
-		num_iter++;
-		if((float)diff/((float)(grid_3->dimension*grid_3->dimension)) < (float)TOLERANCE) done = 1;
-	}
-	return num_iter;
+	return 0;
 }
 
-		
+
 /* The main function */
 int main(int argc, char **argv)
 {	
@@ -130,20 +132,20 @@ int main(int argc, char **argv)
 	grid_3->num_elements = grid_3->dimension * grid_3->dimension;
 
 
- 	create_grids(grid_1, grid_2, grid_3);
+	create_grids(grid_1, grid_2, grid_3);
 
-	
+
 	// Compute the reference solution
 	printf("Using the single threaded version to solve the grid. \n");
 	int num_iter = compute_gold(grid_1);	
 	printf("Convergence achieved after %d iterations. \n", num_iter);
-	
+
 	// Use pthreads to solve the equation uisng the red-black parallelization technique
 	printf("Using the pthread implementation to solve the grid using the red-black parallelization method. \n");
 	num_iter = compute_using_openmp_red_black(grid_2);
 	printf("Convergence achieved after %d iterations. \n", num_iter);
 
-	
+
 	// Use pthreads to solve the equation using the jacobi method in parallel
 	printf("Using the pthread implementation to solve the grid using the jacobi method. \n");
 	num_iter = compute_using_openmp_jacobi(grid_3);
@@ -157,14 +159,14 @@ int main(int argc, char **argv)
 
 	printf("Red-black: \n");
 	print_statistics(grid_2);
-		
+
 	printf("Jacobi: \n");
 	print_statistics(grid_3);
 
 	// Free the grid data structures
 	free((void *)grid_1->element);	
 	free((void *)grid_1); 
-	
+
 	free((void *)grid_2->element);	
 	free((void *)grid_2);
 
