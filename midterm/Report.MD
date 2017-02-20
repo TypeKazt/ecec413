@@ -7,16 +7,38 @@
 ![Timing Graphs]
  (https://github.com/om23/ecec413/blob/master/midterm/solver.png)
 
+![Timing Graphs]
+ (https://github.com/om23/ecec413/blob/master/midterm/chol.png)
+
 
 ## Code
 
 
 ### Problem 1
+Note: Compile using  gcc -fopenmp -o chol chol.c chol_gold.c -lpthread -lm -std=gnu99
 
+
+#### Timing data
+| Matrix Size | Number of Threads  | Serial Time (s) | OpenMP (s) | PThreads (s) | Serial vs OpenMP | Serial vs PThreads |
+| ------------------|-------------|-----------------|-------------------|--------------|------------|------------|
+| 512 | 2| 0.10 | 0.15 | 0.10 | 0.67 | 1 |
+| 512 | 4| 0.09 | 0.10 | 0.09 | 0.9 | 1|
+| 512 | 8 | 0.09 | 0.13 | 0.08 | 0.69 | 1.125| 
+| 512 | 16 | 0.10 | 0.11 | 0.09 | 0.91 | 1.11|
+| 1024 | 2 | 0.72 | 1.09 | 0.72 | 0.66 | 1 |
+| 1024 | 4 | 0.69 | 0.70 | 0.50 | 0.98 | 1.38 |
+| 1024 | 8 | 0.71 | 1.09 | 0.47 | 1.06 | 1.37 |
+| 1024 | 16	| 0.70 | 0.66 | 0.51 | 1.06 | 1.37 |
+| 2048 | 2 | 5.67 | 8.58 | 5.76 | 0.66 | 0.98 |
+| 2048 | 4 | 5.59 | 5.39 | 4.02 | 1.04 | 1.39 |
+| 2048 | 8 | 5.59 | 6.27 | 3.78  | 0.89 | 1.47 |
+| 2048 | 16 | 5.56 | 4.22 | 3.61 | 1.31 | 1.54 |
+ 
 
 ### Problem 2
+Note: Compile using  gcc -o solver solver.c solver_gold.c -fopenmp -std=c99 -lm -lpthread
 
-#### Timing data from Pthreads without barriers (compiled using C99)
+#### Timing data
 | Matrix Size | Number of Threads  | Serial Time (s) | Red-Black (s) | Jacobi (s) | Serial vs Red-Black | Serial vs Jacobi |
 | ------------------|-------------|-----------------|-------------------|--------------|------------|------------|
 | 8192 | 4	| 75.36 | 11.73 | 10.89 | 6.42 | 6.92 |
