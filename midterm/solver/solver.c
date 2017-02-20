@@ -85,21 +85,24 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_2)
 {
 	int num_iter = 0;
 	int done = 0;
-	float diff;
+	float diff_x;
+	float diff_y;
 	float temp;
 	unsigned i, j, k, id, xStart, yStart;
 	omp_set_num_threads(num_threads);
 
 
 	while(!done){
-		diff = 0;
-		#pragma omp parallel private(i, j, k, id, xStart, yStart, temp) shared(grid_2, diff)
+		diff_x = 0;
+		diff_y = 0;
+		//#pragma omp parallel private(i, j, k, id, xStart, yStart, temp) shared(grid_2, diff)
+		#pragma omp parallel
 		for (int i = 1; i < (grid_2->dimension-1); i++)
 		{
 			int id = omp_get_thread_num();
 			// Compute "X" (odd)	
 			xStart = (id*2) + i%2;
-			#pragma omp for
+			#pragma omp for reduction(+: diff_x) private(temp, j, xStart)
 			for (int j = xStart; j < (grid_2->dimension-1); j+=num_threads)
 			{
 				temp = grid_2->element[i * grid_2->dimension + j];
@@ -108,15 +111,15 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_2)
 						grid_2->element[(i + 1) * grid_2->dimension + j] +
 						grid_2->element[i * grid_2->dimension + (j + 1)] +
 						grid_2->element[i * grid_2->dimension + (j - 1)]);
-				diff = diff + fabs(grid_2->element[i * grid_2->dimension + j] - temp);	
+				diff_x = diff_x + fabs(grid_2->element[i * grid_2->dimension + j] - temp);	
 			}
 
 			// Barrier to let all "X" calcs finish
-			#pragma omp barrier
+			//#pragma omp barrier
 
 			// Compute "Y" (even)
 			yStart = id*2 + (1 - id%2);
-			#pragma omp for
+			#pragma omp for reduction(+: diff_y) private(temp, j, yStart)
 			for (int k = yStart; k < (grid_2->dimension-1); k+=num_threads)
 			{
 				temp = grid_2->element[i * grid_2->dimension + j];
@@ -125,16 +128,16 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_2)
 						grid_2->element[(i + 1) * grid_2->dimension + j] +
 						grid_2->element[i * grid_2->dimension + (j + 1)] +
 						grid_2->element[i * grid_2->dimension + (j - 1)]);
-				diff = diff + fabs(grid_2->element[i * grid_2->dimension + j] - temp);	
+				diff_y = diff_y + fabs(grid_2->element[i * grid_2->dimension + j] - temp);	
 			}
 
 			// Barrier to let all "Y" calcs finish
-			#pragma omp barrier
+			//#pragma omp barrier
 		}
 
 		//printf("Diff value: %f vs. %f\n", (float)diff, (float)(grid_2->dimension*grid_2->dimension));
 		num_iter++;
-		if((float)diff/((float)(grid_2->dimension*grid_2->dimension)) < (float)TOLERANCE) done = 1;
+		if(((float)diff_x+(float)diff_y)/((float)(grid_2->dimension*grid_2->dimension)) < (float)TOLERANCE) done = 1;
 	}
 	return num_iter;
 }
