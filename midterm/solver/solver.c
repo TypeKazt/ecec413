@@ -99,6 +99,7 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_2)
 			int id = omp_get_thread_num();
 			// Compute "X" (odd)	
 			xStart = (id*2) + i%2;
+			#pragma omp for
 			for (int j = xStart; j < (grid_2->dimension-1); j+=num_threads)
 			{
 				temp = grid_2->element[i * grid_2->dimension + j];
@@ -115,6 +116,7 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_2)
 
 			// Compute "Y" (even)
 			yStart = id*2 + (1 - id%2);
+			#pragma omp for
 			for (int k = yStart; k < (grid_2->dimension-1); k+=num_threads)
 			{
 				temp = grid_2->element[i * grid_2->dimension + j];
@@ -146,7 +148,7 @@ int compute_using_openmp_jacobi(GRID_STRUCT *grid_3)
 	int done = 0;
 	float diff;
 	float temp;
-	unsigned i, j, k, id;
+	unsigned i, j, id;
 	omp_set_num_threads(num_threads);
 
 	//make a copy of grid, to use for calculations
@@ -154,7 +156,7 @@ int compute_using_openmp_jacobi(GRID_STRUCT *grid_3)
 
 	while(!done){
 		diff = 0;
-		#pragma omp parallel private(i, j, k, id, temp) shared(grid_3, diff)
+		#pragma omp parallel for reduction(+: temp) 
 		for (int i = 1; i < (grid_3->dimension-1); i++)
 		{
 			int id = omp_get_thread_num();
@@ -226,7 +228,6 @@ int main(int argc, char **argv)
 
 	// Print key statistics for the converged values
 	printf("\n");
-/*
 	printf("Reference: \n");
 	print_statistics(grid_1);
 
@@ -235,7 +236,6 @@ int main(int argc, char **argv)
 
 	printf("Jacobi: \n");
 	print_statistics(grid_3);
-*/
 
 	// Free the grid data structures
 	free((void *)grid_1->element);	
