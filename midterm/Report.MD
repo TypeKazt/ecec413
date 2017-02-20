@@ -4,14 +4,11 @@
 
 ## Results
 
-![Timing Graphs]
- (https://github.com/om23/ecec413/blob/master/midterm/solver.png)
-
-![Timing Graphs]
+![Problem 1 Timing Graphs]
  (https://github.com/om23/ecec413/blob/master/midterm/chol.png)
 
-
-## Code
+![Problem 2 Timing Graphs]
+ (https://github.com/om23/ecec413/blob/master/midterm/solver.png)
 
 
 ### Problem 1
@@ -34,6 +31,90 @@ Note: Compile using  gcc -fopenmp -o chol chol.c chol_gold.c -lpthread -lm -std=
 | 2048 | 8 | 5.59 | 6.27 | 3.78  | 0.89 | 1.47 |
 | 2048 | 16 | 5.56 | 4.22 | 3.61 | 1.31 | 1.54 |
  
+#### Cholesky Decomposition (PThreads)
+
+Barrier Data Structure Initialized
+```C
+  struct s1* para = (struct s1*) malloc(num_threads * sizeof(struct s1));
+  for (i = 0; i < num_threads; i++)
+  {
+    para[i].mat = U.elements;
+    para[i].id = i;
+    // creating num_threads pthreads
+    pthread_create(&threads[i], NULL, pthread_wrapper, (void *)&para[i]);
+  }
+```
+
+
+Main PThread Row Loop
+```C
+  for(row = 0; row< num_elements; row++)
+  {
+    row_number = row;
+	U.elements[row * U.num_rows + row] = sqrt(U.elements[row * U.num_rows + row]);
+    pthread_barrier_wait(&barrier_main);
+    pthread_barrier_wait(&barrier_main);
+  }
+```
+
+
+PThread Wrapper to handle functions rowReduction and eliminationStep with barriers to make sure data is in sync
+```C
+void* pthread_wrapper(void* s)
+{
+	struct s1* myStruct = (struct s1*) s;
+    while(row_number < MATRIX_SIZE)
+    {
+        pthread_barrier_wait(&barrier_main);
+        rowReduction(s);
+        pthread_barrier_wait(&barrier_threads);
+        eliminationStep(s);
+        pthread_barrier_wait(&barrier_threads);
+		if (row_number == MATRIX_SIZE-1)
+			setZeroes(s);
+			
+        pthread_barrier_wait(&barrier_main);
+    }
+    pthread_exit(0);
+}
+```
+
+Note: rowReduction and eliminationStep can be found in midterm/cholesky/chol.c
+
+
+
+#### Cholesky Decomposition (OpenMP)
+
+
+OpenMP used to parallelize algorithm. OMP Parallel and barrier's used to ensure Cholesky decomposition takes place in place on the U Matrix
+```C
+    #pragma omp parallel default(none) shared(U) private(k, i, j)
+	{
+			for(k = 0; k < U.num_rows; k++){
+					  // Take the square root of the diagonal element
+					  #pragma openmp master
+					  U.elements[k * U.num_rows + k] = sqrt(U.elements[k * U.num_rows + k]);
+
+					  #pragma openmp barrier
+			
+					  // Division step
+					  for(j = (k + 1)+omp_get_thread_num(); j < U.num_rows; j += num_threads)
+								 U.elements[k * U.num_rows + j] /= U.elements[k * U.num_rows + k]; // Division step
+					  #pragma openmp barrier
+
+					  // Elimination step
+					  for(i = (k + 1)+omp_get_thread_num(); i < U.num_rows; i += num_threads)
+								 for(j = i; j < U.num_rows; j++)
+											U.elements[i * U.num_rows + j] -= U.elements[k * U.num_rows + i] * U.elements[k * U.num_rows + j]; 
+
+					  #pragma openmp barrier
+			}   
+	}
+```
+
+
+
+
 
 ### Problem 2
 Note: Compile using  gcc -o solver solver.c solver_gold.c -fopenmp -std=c99 -lm -lpthread
