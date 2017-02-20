@@ -131,10 +131,6 @@ int chol_gold(const Matrix A, Matrix U)
 	unsigned int i, j, k; 
 	unsigned int size = A.num_rows * A.num_columns;
 
-	// Copy the contents of the A matrix into the working matrix U
-	for (i = 0; i < size; i ++)
-		U.elements[i] = A.elements[i];
-
 	// Perform the Cholesky decomposition in place on the U matrix
 	for(k = 0; k < U.num_rows; k++){
 			  // Take the square root of the diagonal element
@@ -161,7 +157,7 @@ int chol_gold(const Matrix A, Matrix U)
 						 U.elements[i * U.num_rows + j] = 0.0;
 
 	// printf("The Upper triangular matrix is: \n");
-	// print_matrix(U);
+	 //print_matrix(U);
 
 	return 1;
 }
@@ -200,8 +196,11 @@ int easy_check(const Matrix urs, const Matrix mine)
 	unsigned int i;
 	for(i = 0; i < size; i++)
 			  if(abs(urs.elements[i] - mine.elements[i]) > 0.01)
+			  {
+						 printf("elm fail: %d\n", i);
+						 printf("urs: %f  mine: %f\n", urs.elements[i], mine.elements[i]);
 						 return 0;
-
+			  }
 	return 1;
 }
 
