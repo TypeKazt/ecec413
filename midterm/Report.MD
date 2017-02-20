@@ -17,7 +17,7 @@
 ### Problem 2
 
 #### Timing data from Pthreads without barriers (compiled using C99)
-| Type of Implimentation | Number of Threads  | Serial Time (s)	| Red-Black (s) | Jacobi (s) | Serial vs Red-Black | Serial vs Jacobi |
+| Matrix Size | Number of Threads  | Serial Time (s)	| Red-Black (s) | Jacobi (s) | Serial vs Red-Black | Serial vs Jacobi |
 | ------------------|-------------|-----------------|-------------------|--------------|------------|------------|
 | 8192 | 4	| 75.36 | 11.73 | 10.89 | 6.42 | 6.92 |
 | 8192 | 8	| 75.60 | 5.89 | 4.51 | 12.84 | 16.76 |
