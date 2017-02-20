@@ -151,30 +151,29 @@ void chol_using_openmp(const Matrix A, Matrix U)
 
 	unsigned int i, j, k;  
     unsigned int size = A.num_rows * A.num_columns;
-
+	omp_set_num_threads(num_threads);
+	int num_rows = num_rows;
 
     // Perform the Cholesky decomposition in place on the U matrix
 			for(k = 0; k < U.num_rows; k++){
 					  // Take the square root of the diagonal element
-					  U.elements[k * U.num_rows + k] = sqrt(U.elements[k * U.num_rows + k]);
+					  	U.elements[k * U.num_rows + k] = sqrt(U.elements[k * U.num_rows + k]);
 
 					  // Division step
-					  #pragma openmp parallel for
 					  for(j = (k + 1); j < U.num_rows; j++){
 								 U.elements[k * U.num_rows + j] /= U.elements[k * U.num_rows + k]; // Division step
 					  }
 
 					  // Elimination step
-					  omp_set_num_threads(num_threads);
 					 
-					  #pragma openmp for private(i, j)
+					  #pragma openmp parallel for schedule(static) private(i,j)
 					  for(i = (k + 1); i < U.num_rows; i++){
 								 for(j = i; j < U.num_rows; j++)
 											U.elements[i * U.num_rows + j] -= U.elements[k * U.num_rows + i] * U.elements[k * U.num_rows + j]; 
 					}
 			}   
+	  
     // As the final step, zero out the lower triangular portion of U
-	#pragma openmp parallel for private(i, j) shared(U)
     for(i = 0; i < U.num_rows; i++)
               for(j = 0; j < i; j++)
                          U.elements[i * U.num_rows + j] = 0.0;
