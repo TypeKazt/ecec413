@@ -12,8 +12,10 @@ gcc -o solver solver.c solver_gold.c -fopenmp -std=c99 -lm -lpthread
 #include <string.h>
 #include <malloc.h>
 #include <time.h>
+#include <sys/time.h>
 #include <stdlib.h>
 #include <math.h>
+#include <omp.h>
 #include "grid.h" // This file defines the grid data structure
 
 #define num_threads 8
@@ -79,38 +81,66 @@ void create_grids(GRID_STRUCT *grid_1, GRID_STRUCT *grid_2, GRID_STRUCT *grid_3)
 }
 
 /* Edit this function to use the jacobi method of solving the equation. The final result should be placed in the final_grid_1 data structure */
-int compute_using_openmp_jacobi(GRID_STRUCT *grid_2)
+int compute_using_openmp_red_black(GRID_STRUCT *grid_2)
 {
 	int num_iter = 0;
 	int done = 0;
 	float diff;
 	float temp;
-	unsigned i, j;
+	unsigned i, j, k, id, xStart, yStart;
 	omp_set_num_threads(num_threads);
 
-	#pragma omp parallel private(i, j) shared(grid_2)
+
 	while(!done){
 		diff = 0;
-
-		for(int i = 1; i < (grid_2->dimension-1); i++){
-			for(int j = 1; j < (grid_2->dimension-1); j++){
+		#pragma omp parallel private(i, j, k, id, xStart, yStart, temp) shared(grid_2, diff)
+		for (int i = 1; i < (grid_2->dimension-1); i++)
+		{
+			int id = omp_get_thread_num();
+			// Compute "X" (odd)	
+			xStart = (id*2) + i%2;
+			for (int j = xStart; j < (grid_2->dimension-1); j+=num_threads)
+			{
 				temp = grid_2->element[i * grid_2->dimension + j];
 				grid_2->element[i * grid_2->dimension + j] = 0.20*(grid_2->element[i * grid_2->dimension + j] + 
 						grid_2->element[(i - 1) * grid_2->dimension + j] +
 						grid_2->element[(i + 1) * grid_2->dimension + j] +
 						grid_2->element[i * grid_2->dimension + (j + 1)] +
 						grid_2->element[i * grid_2->dimension + (j - 1)]);
-				diff = diff + fabs(grid_2->element[i * grid_2->dimension + j] - temp);
+				diff = diff + fabs(grid_2->element[i * grid_2->dimension + j] - temp);	
 			}
+
+			// Barrier to let all "X" calcs finish
+			#pragma omp barrier
+
+			// Compute "Y" (even)
+			yStart = id*2 + (1 - id%2);
+			for (int k = yStart; k < (grid_2->dimension-1); k+=num_threads)
+			{
+				temp = grid_2->element[i * grid_2->dimension + j];
+				grid_2->element[i * grid_2->dimension + j] = 0.20*(grid_2->element[i * grid_2->dimension + j] + 
+						grid_2->element[(i - 1) * grid_2->dimension + j] +
+						grid_2->element[(i + 1) * grid_2->dimension + j] +
+						grid_2->element[i * grid_2->dimension + (j + 1)] +
+						grid_2->element[i * grid_2->dimension + (j - 1)]);
+				diff = diff + fabs(grid_2->element[i * grid_2->dimension + j] - temp);	
+			}
+
+			// Barrier to let all "Y" calcs finish
+			#pragma omp barrier
 		}
+
+		//printf("Diff value: %f vs. %f\n", (float)diff, (float)(grid_2->dimension*grid_2->dimension));
 		num_iter++;
 		if((float)diff/((float)(grid_2->dimension*grid_2->dimension)) < (float)TOLERANCE) done = 1;
 	}
 	return num_iter;
 }
 
+
+
 /* Edit this function to use the red-black method of solving the equation. The final result should be placed in the final_grid_2 data structure */
-int compute_using_openmp_red_black(GRID_STRUCT *grid_3)
+int compute_using_openmp_jacobi(GRID_STRUCT *grid_3)
 {
 	return 0;
 }
@@ -133,23 +163,34 @@ int main(int argc, char **argv)
 
 
 	create_grids(grid_1, grid_2, grid_3);
-
+	
+	srand(time(NULL));
+	struct timeval start, stop;	
 
 	// Compute the reference solution
 	printf("Using the single threaded version to solve the grid. \n");
+	gettimeofday(&start, NULL);
 	int num_iter = compute_gold(grid_1);	
+	gettimeofday(&stop, NULL);
 	printf("Convergence achieved after %d iterations. \n", num_iter);
+	printf("CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
-	// Use pthreads to solve the equation uisng the red-black parallelization technique
-	printf("Using the pthread implementation to solve the grid using the red-black parallelization method. \n");
+	// Use openmp to solve the equation uisng the red-black parallelization technique
+	printf("Using the openmp implementation to solve the grid using the red-black parallelization method. \n");
+	gettimeofday(&start, NULL);
 	num_iter = compute_using_openmp_red_black(grid_2);
+	gettimeofday(&stop, NULL);
 	printf("Convergence achieved after %d iterations. \n", num_iter);
+	printf("CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
 
-	// Use pthreads to solve the equation using the jacobi method in parallel
-	printf("Using the pthread implementation to solve the grid using the jacobi method. \n");
+	// Use openmp to solve the equation using the jacobi method in parallel
+	printf("Using the openmp implementation to solve the grid using the jacobi method. \n");
+	gettimeofday(&start, NULL);
 	num_iter = compute_using_openmp_jacobi(grid_3);
+	gettimeofday(&stop, NULL); 
 	printf("Convergence achieved after %d iterations. \n", num_iter);
+	printf("CPU run time = %0.2f s. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
 
 	// Print key statistics for the converged values
