@@ -11,14 +11,14 @@
 ## Code
 
 
-### Problem
+### Problem 1
 
 
 ### Problem 2
 
 #### Timing data from Pthreads without barriers (compiled using C99)
 | Type of Implimentation | Number of Threads  | Serial Time (s)	| Red-Black (s) | Jacobi (s) | Serial vs Red-Black | Serial vs Jacobi |
-| ------------------|-------------|-----------------|-------------------|--------------|---------|
+| ------------------|-------------|-----------------|-------------------|--------------|------------|------------|
 | 8192 | 4	| 75.36 | 11.73 | 10.89 | 6.42 | 6.92 |
 | 8192 | 8	| 75.60 | 5.89 | 4.51 | 12.84 | 16.76 |
 | 8192 | 16 | 75.86 | 2.79 | 2.16 | 27.19 | 35.12 |
