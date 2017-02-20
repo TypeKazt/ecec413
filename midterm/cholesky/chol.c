@@ -272,44 +272,42 @@ void chol_using_openmp(const Matrix A, Matrix U)
 
     // Copy the contents of the A matrix into the working matrix U
 	//#pragma openmp parallel for shared(A, U) private(i)
+    #pragma omp parallel for
     for (i = 0; i < size; i ++) 
         U.elements[i] = A.elements[i];
 
 	//#pragma openmp barrier
 
     // Perform the Cholesky decomposition in place on the U matrix
-    #pragma omp parallel default(none) shared(U) private(k, i, j)
-	{
-			for(k = 0; k < U.num_rows; k++){
-					  // Take the square root of the diagonal element
-					  #pragma openmp master
-					  U.elements[k * U.num_rows + k] = sqrt(U.elements[k * U.num_rows + k]);
+	for(k = 0; k < U.num_rows; k++){
+		// Take the square root of the diagonal element
+		U.elements[k * U.num_rows + k] = sqrt(U.elements[k * U.num_rows + k]);
 
-					  #pragma openmp barrier
-			
-					  // Division step
-					  for(j = (k + 1)+omp_get_thread_num(); j < U.num_rows; j += num_threads)
-								 U.elements[k * U.num_rows + j] /= U.elements[k * U.num_rows + k]; // Division step
-					  #pragma openmp barrier
+		if(U.elements[k * U.num_rows + k] <= 0){
+			printf("Cholesky decomposition failed. \n");
+			//return 0;
+		}
 
-					  // Elimination step
-					  for(i = (k + 1)+omp_get_thread_num(); i < U.num_rows; i += num_threads)
-								 for(j = i; j < U.num_rows; j++)
-											U.elements[i * U.num_rows + j] -= U.elements[k * U.num_rows + i] * U.elements[k * U.num_rows + j]; 
+		// Division step
+		for(j = (k + 1); j < U.num_rows; j ++)
+				 U.elements[k * U.num_rows + j] /= U.elements[k * U.num_rows + k];
 
-					  #pragma openmp barrier
-			}   
-	}
+		// Elimination step	
+		#pragma omp parallel for private(j)
+		for(i = (k + 1); i < U.num_rows; i++)
+			for(j = i; j < U.num_rows; j++)
+				U.elements[i * U.num_rows + j] -= U.elements[k * U.num_rows + i] * U.elements[k * U.num_rows + j]; 
+		}   
+	
     // As the final step, zero out the lower triangular portion of U
 	//#pragma openmp parallel for private(i, j) shared(U)
     for(i = 0; i < U.num_rows; i++)
-              for(j = 0; j < i; j++)
-                         U.elements[i * U.num_rows + j] = 0.0;
+    	for(j = 0; j < i; j++)
+              	U.elements[i * U.num_rows + j] = 0.0;
 
     // printf("The Upper triangular matrix is: \n");
     // print_matrix(U);
 
-    return 1;
 }
 
 
