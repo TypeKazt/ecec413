@@ -142,7 +142,38 @@ int compute_using_openmp_red_black(GRID_STRUCT *grid_2)
 /* Edit this function to use the red-black method of solving the equation. The final result should be placed in the final_grid_2 data structure */
 int compute_using_openmp_jacobi(GRID_STRUCT *grid_3)
 {
-	return 0;
+	int num_iter = 0;
+	int done = 0;
+	float diff;
+	float temp;
+	unsigned i, j, k, id;
+	omp_set_num_threads(num_threads);
+
+	//make a copy of grid, to use for calculations
+	GRID_STRUCT *grid_3_copy = grid_3;
+
+	while(!done){
+		diff = 0;
+		#pragma omp parallel private(i, j, k, id, temp) shared(grid_3, diff)
+		for (int i = 1; i < (grid_3->dimension-1); i++)
+		{
+			int id = omp_get_thread_num();
+			for (int j = id; j < (grid_3->dimension-1); j+=num_threads)
+			{
+				temp = grid_3->element[i * grid_3->dimension + j];
+				grid_3->element[i * grid_3->dimension + j] = 0.20*(grid_3_copy->element[i * grid_3_copy->dimension + j] + 
+						grid_3_copy->element[(i - 1) * grid_3_copy->dimension + j] +
+						grid_3_copy->element[(i + 1) * grid_3_copy->dimension + j] +
+						grid_3_copy->element[i * grid_3_copy->dimension + (j + 1)] +
+						grid_3_copy->element[i * grid_3_copy->dimension + (j - 1)]);
+				diff = diff + fabs(grid_3->element[i * grid_3->dimension + j] - temp);	
+			}
+		}
+		//printf("Diff value: %f vs. %f\n", (float)diff, (float)(grid_2->dimension*grid_2->dimension));
+		num_iter++;
+		if((float)diff/((float)(grid_3->dimension*grid_3->dimension)) < (float)TOLERANCE) done = 1;
+	}
+	return num_iter;
 }
 
 
@@ -195,6 +226,7 @@ int main(int argc, char **argv)
 
 	// Print key statistics for the converged values
 	printf("\n");
+/*
 	printf("Reference: \n");
 	print_statistics(grid_1);
 
@@ -203,6 +235,7 @@ int main(int argc, char **argv)
 
 	printf("Jacobi: \n");
 	print_statistics(grid_3);
+*/
 
 	// Free the grid data structures
 	free((void *)grid_1->element);	
