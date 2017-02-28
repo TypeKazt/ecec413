@@ -12,6 +12,10 @@
 #include <string.h>
 #include <math.h>
 #include "gauss_eliminate.h"
+<<<<<<< HEAD
+#include <xmmintrin.h>
+=======
+>>>>>>> a41448636d50a118c2d0305e66e5f3b57158e178
 
 #define MIN_NUMBER 2
 #define MAX_NUMBER 50
@@ -82,8 +86,55 @@ main(int argc, char** argv) {
 
 
 void 
+<<<<<<< HEAD
+gauss_eliminate_using_sse(const float* A, float* U)                  /* Write code to perform gaussian elimination using OpenMP. */
+{
+/*
+ *	Under the assumption num_elements%4 == 0
+ */
+    unsigned int i, j, k;
+	unsigned int loop_bound = num_elements/4;
+	__m128 *src = (__m128 *) U;
+	__m128 m1;
+	__m128 pivot;	
+	
+
+    for (i = 0; i < num_elements; i ++)             /* Copy the contents of the A matrix into the U matrix. */
+        for(j = 0; j < num_elements; j++)
+            U[num_elements * i + j] = A[num_elements*i + j];
+
+
+    for (k = 0; k < num_elements; k++){             /* Perform Gaussian elimination in place on the U matrix. */
+		pivot = _mm_set_ps1(U[num_elements * k + k]) // set pivot
+        for (j = (k + 1); j < loop_bound; j++){   /* Reduce the current row. Make Div by 4*/
+
+                        if (U[num_elements*k + k] == 0){
+                                printf("Numerical instability detected. The principal diagonal element is zero. \n");
+                                return 0;
+                        }
+
+            /* Division step. */
+                        U[num_elements * k + j] = (float)(U[num_elements * k + j] / U[num_elements * k + k]);
+        }
+
+        U[num_elements * k + k] = 1;             /* Set the principal diagonal entry in U to be 1. */
+
+        for (i = (k+1); i < num_elements; i++){
+            for (j = (k+1); j < loop_bound; j++) /* Make div by 4*/
+                /* Elimnation step. */
+                                U[num_elements * i + j] = U[num_elements * i + j] -\
+                                          (U[num_elements * i + k] * U[num_elements * k + j]);
+
+            U[num_elements * i + k] = 0;
+                }
+        }
+
+        return 1;
+
+=======
 gauss_eliminate_using_sse(const Matrix A, Matrix U)                  /* Write code to perform gaussian elimination using OpenMP. */
 {
+>>>>>>> a41448636d50a118c2d0305e66e5f3b57158e178
 }
 
 
