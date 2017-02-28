@@ -18,7 +18,7 @@ gcc -o solver solver.c solver_gold.c -fopenmp -std=c99 -lm -lpthread
 #include <omp.h>
 #include "grid.h" // This file defines the grid data structure
 
-#define num_threads 8
+#define num_threads 16
 
 extern int compute_gold(GRID_STRUCT *);
 int compute_using_openmp_jacobi(GRID_STRUCT *);
