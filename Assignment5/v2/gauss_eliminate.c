@@ -67,7 +67,10 @@ main(int argc, char** argv) {
 	/* WRITE THIS CODE: Perform the Gaussian elimination using the SSE version. 
 	 * The resulting upper triangular matrix should be returned in U
 	 * */
+	gettimeofday(&start, NULL);
 	gauss_eliminate_using_sse(A, U);
+	gettimeofday(&stop, NULL);
+	printf("SSE run time = %0.2f s! \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
 	/* Check if the SSE result is equivalent to the expected solution. */
 	int size = MATRIX_SIZE*MATRIX_SIZE;
@@ -86,12 +89,12 @@ main(int argc, char** argv) {
 gauss_eliminate_using_sse(const Matrix A, Matrix U)                  /* Write code to perform gaussian elimination using OpenMP. */
 {
 	unsigned int i, j, k;
-	
+
 	float *ptr;
 	__m128 *src;
 	__m128 op_1;
 	__m128 op_2;
-    	
+
 	for (i = 0; i < num_elements; i ++ )
 	{
 		for (j = 0; j < num_elements; j++)
@@ -106,7 +109,7 @@ gauss_eliminate_using_sse(const Matrix A, Matrix U)                  /* Write co
 	{
 		for (j = (k + 1); j < num_elements; j++)
 		{
-		
+
 			if(!((long)(U.elements + (num_elements * k) + j) & 0xF))
 			{
 				break;
@@ -115,7 +118,7 @@ gauss_eliminate_using_sse(const Matrix A, Matrix U)                  /* Write co
 			// division step
 			U.elements[num_elements * k + j] = (float)(U.elements[num_elements * k + j] / U.elements[num_elements * k + k]);
 		}
-		
+
 		src = (__m128 *)(U.elements + (num_elements * k + j));
 		op_1 = _mm_set_ps1(U.elements[num_elements * k + k]);
 
@@ -124,7 +127,7 @@ gauss_eliminate_using_sse(const Matrix A, Matrix U)                  /* Write co
 			*src = _mm_div_ps(*src, op_1);
 			++src;
 		}
-		
+
 		if (j != num_elements)
 		{
 			j -= 4;
@@ -133,7 +136,7 @@ gauss_eliminate_using_sse(const Matrix A, Matrix U)                  /* Write co
 				U.elements[num_elements * k + j] = (float)(U.elements[num_elements * k + j] / U.elements[num_elements * k + k]);
 			}
 		}
-	
+
 		U.elements[num_elements * k + k] = 1;  // set principal diagonal entry in U to be 1
 
 		for (i = (k + 1); i < num_elements; i++)
