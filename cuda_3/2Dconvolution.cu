@@ -72,10 +72,11 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     CopyToDeviceMatrix(Pd, P); // Clear memory
 
     // Setup the execution configuration
+    dim3 threads(THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE);
 
-
- 
     // Launch the device computation threads!
+    ConvolutionKernel<<< grid, threads >>>(Pd.elements, Md.elements, Nd.elements, MATRIX_SIZE);
+    cudaThreadSynchronize();
 
     // Read P from the device
     CopyFromDeviceMatrix(P, Pd); 
