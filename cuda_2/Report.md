@@ -4,7 +4,7 @@
 
 ## Results
 ![CUDA Timing Graphs]
- (https://github.com/om23/ecec413/blob/master/cuda_2/timingdata.png)
+(https://github.com/om23/ecec413/blob/master/cuda_2/timingdata.png)
 
 
 ## Timing data
