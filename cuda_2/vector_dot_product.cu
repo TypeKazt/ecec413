@@ -91,7 +91,7 @@ float compute_on_device(float *A_on_host, float *B_on_host, int num_elements)
 	cudaMemcpy(B_on_device, B_on_host, num_elements*sizeof(float), cudaMemcpyHostToDevice);
 	
 	cudaMalloc((void**)&C_on_device, GRID_SIZE*sizeof(float));
-	cudaMemcpy(C_on_device, 0.0f, GRID_SIZE*sizeof(float));
+	cudaMemset(C_on_device, 0.0, GRID_SIZE*sizeof(float));
 	
 	// device mutex, add to each threadblock reduction
 	int *mutex = NULL;
@@ -116,7 +116,7 @@ float compute_on_device(float *A_on_host, float *B_on_host, int num_elements)
 	check_for_error("Error in kernel");
 	
 	/* Copy first element of C_on_device to result */
-	float result = 0.0f;
+	float result = 0.0;
 	cudaMemcpy( &result, C_on_device, sizeof(float), cudaMemcpyDeviceToHost);
 	
 	/* Free allocated vectors */
