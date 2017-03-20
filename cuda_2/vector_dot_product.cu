@@ -4,6 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <time.h>
 
 // includes, kernels
 #include "vector_dot_product_kernel.cu"
@@ -90,13 +91,13 @@ float compute_on_device(float *A_on_host, float *B_on_host, int num_elements)
 	cudaMalloc((void**)&B_on_device, num_elements*sizeof(float));
 	cudaMemcpy(B_on_device, B_on_host, num_elements*sizeof(float), cudaMemcpyHostToDevice);
 	
-	cudaMalloc((void**)&C_on_device, num_elements*sizeof(float));
+	cudaMalloc((void**)&C_on_device, GRID_SIZE*sizeof(float));
 	cudaMemcpy(C_on_device, 0.0, GRID_SIZE*sizeof(float));
 	
 	// device mutex, add to each threadblock reduction
 	int *mutex = NULL;
 	cudaMalloc((void **)&mutex, sizeof(int));
-	cudaMemset(mutex, 0m sizeof(int));
+	cudaMemset(mutex, 0, sizeof(int));
 
 	// Thread block and grid inits
 	dim3 dimBlock(BLOCK_SIZE, 1, 1);
