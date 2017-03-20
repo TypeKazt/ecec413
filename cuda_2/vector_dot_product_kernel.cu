@@ -11,7 +11,7 @@
 __device__ void lock(int *mutex);
 __device__ void unlock(int *mutex);
 
-__global__ void vector_dot_product_kernel()
+__global__ void vector_dot_product_kernel(int num_elements, float* a, float* b, float* result, int *mutex)
 {
 	__shared__ float runningSums[BLOCK_SIZE];
 
