@@ -4,7 +4,6 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
-#include <time.h>
 
 // includes, kernels
 #include "vector_dot_product_kernel.cu"
@@ -92,7 +91,7 @@ float compute_on_device(float *A_on_host, float *B_on_host, int num_elements)
 	cudaMemcpy(B_on_device, B_on_host, num_elements*sizeof(float), cudaMemcpyHostToDevice);
 	
 	cudaMalloc((void**)&C_on_device, GRID_SIZE*sizeof(float));
-	cudaMemcpy(C_on_device, 0.0, GRID_SIZE*sizeof(float));
+	cudaMemcpy(C_on_device, 0.0f, GRID_SIZE*sizeof(float));
 	
 	// device mutex, add to each threadblock reduction
 	int *mutex = NULL;
@@ -102,6 +101,8 @@ float compute_on_device(float *A_on_host, float *B_on_host, int num_elements)
 	// Thread block and grid inits
 	dim3 dimBlock(BLOCK_SIZE, 1, 1);
 	dim3 dimGrid(GRID_SIZE, 1);
+
+	struct timeval start, stop;
 
 	printf("performing vector dot product on GPU. \n");
 	gettimeofday(&start, NULL);
@@ -115,7 +116,7 @@ float compute_on_device(float *A_on_host, float *B_on_host, int num_elements)
 	check_for_error("Error in kernel");
 	
 	/* Copy first element of C_on_device to result */
-	float result = 0.0;
+	float result = 0.0f;
 	cudaMemcpy( &result, C_on_device, sizeof(float), cudaMemcpyDeviceToHost);
 	
 	/* Free allocated vectors */
