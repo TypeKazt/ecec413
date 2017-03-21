@@ -5,7 +5,7 @@
 // Thread block size
 #define THREAD_BLOCK_SIZE 32
 #define KERNEL_SIZE 5
-#define MATRIX_SIZE 1024
+#define MATRIX_SIZE 2048
 #define NUM_ELEMENTS MATRIX_SIZE*MATRIX_SIZE
 
 // Matrix Structure declaration
