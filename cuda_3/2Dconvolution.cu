@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 
    /* Check if the device result is equivalent to the expected solution. */
     int num_elements = C.height * C.width;
-	int status = checkResults(reference.elements, C.elements, num_elements, 0.001f);
+	int status = checkResults(reference.elements, C.elements, NUM_ELEMENTS, 0.001f);
 	printf("Test %s\n", (1 == status) ? "PASSED" : "FAILED");
 
    // Free matrices

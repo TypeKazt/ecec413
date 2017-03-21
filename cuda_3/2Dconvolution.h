@@ -6,7 +6,7 @@
 #define THREAD_BLOCK_SIZE 32
 #define KERNEL_SIZE 5
 #define MATRIX_SIZE 1024
-#define num_elements MATRIX_SIZE*MATRIX_SIZE
+#define NUM_ELEMENTS MATRIX_SIZE*MATRIX_SIZE
 
 // Matrix Structure declaration
 typedef struct {

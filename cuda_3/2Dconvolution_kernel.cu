@@ -14,7 +14,7 @@ __global__ void ConvolutionKernel(Matrix N, Matrix P)
     int i, j, m, n, point_i, point_j;
     double sum;
 
-    while (idx < num_elements){
+    while (idx < NUM_ELEMENTS){
         sum = 0;
         i = idx/N.width;
         j = idx%N.width;
