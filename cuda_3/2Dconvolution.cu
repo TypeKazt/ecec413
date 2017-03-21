@@ -45,7 +45,7 @@ int main(int argc, char** argv)
    computeGold(reference.elements, A.elements, B.elements, B.height, B.width);
        
    gettimeofday(&stop, NULL);
-   printf("Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
+   printf("CPU Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
  
 	/* Convolve matrix B with matrix A on the device. */
    ConvolutionOnDevice(A, B, C);
@@ -68,19 +68,19 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
 {
     // Load M and N to the device
     Matrix Md = AllocateDeviceMatrix(M);
-    CopyToDeviceMatrix(Md, M);
     Matrix Nd = AllocateDeviceMatrix(N);
-    CopyToDeviceMatrix(Nd, N);
 
     // Allocate P on the device
     Matrix Pd = AllocateDeviceMatrix(P);
-    CopyToDeviceMatrix(Pd, P); // Clear memory
 
     // Setup the execution configuration
     dim3 grid((P.width + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, (P.height + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, 1);
     dim3 block(THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE, 1);
 
-    printf("performing vector dot product on GPU. \n");
+    cudaMemcpyToSymbol(sM, M.elements, M.width*M.height*sizeof(float));
+    CopyToDeviceMatrix(Nd, N);
+    CopyToDeviceMatrix(Pd, P);
+
     struct timeval start, stop;
     gettimeofday(&start, NULL);
 
@@ -89,7 +89,7 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     cudaThreadSynchronize();
 
     gettimeofday(&stop, NULL);
-    printf("Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
+    printf("GPU Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
 
     // Read P from the device
