@@ -5,6 +5,7 @@
 #include <sys/time.h>
 
 // includes, kernels
+__constant__ float kernel_c[25];
 #include "2Dconvolution_kernel.cu"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,10 +75,11 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     Matrix Pd = AllocateDeviceMatrix(P);
 
     // Setup the execution configuration
+    int num_elements = MATRIX_SIZE * MATRIX_SIZE;
     dim3 grid((P.width + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, (P.height + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, 1);
     dim3 block(THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE, 1);
 
-    cudaMemcpyToSymbol(sM, M.elements, M.width*M.height*sizeof(float));
+    cudaMemcpyToSymbol(kernel_c, M.elements, M.width*M.height*sizeof(float));
     CopyToDeviceMatrix(Nd, N);
     CopyToDeviceMatrix(Pd, P);
 
@@ -85,7 +87,7 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     gettimeofday(&start, NULL);
 
     // Launch the device computation threads!
-    ConvolutionKernel<<<grid, block>>>(Md, Nd, Pd);
+    ConvolutionKernel<<<grid, block>>>(Nd, Pd, num_elements);
     cudaThreadSynchronize();
 
     gettimeofday(&stop, NULL);
