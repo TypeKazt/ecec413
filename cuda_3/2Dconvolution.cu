@@ -72,8 +72,8 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     CopyToDeviceMatrix(Pd, P); // Clear memory
 
     // Setup the execution configuration
-    dim3 grid((P.width + BLOCK_SIZE -1)/BLOCK_SIZE, (P.height + BLOCK_SIZE -1)/BLOCK_SIZE, 1);
-    dim3 block(BLOCK_SIZE, BLOCK_SIZE, 1);
+    dim3 grid((P.width + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, (P.height + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, 1);
+    dim3 block(THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE, 1);
 
 
     // Launch the device computation threads!

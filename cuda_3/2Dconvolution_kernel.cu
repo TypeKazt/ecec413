@@ -19,7 +19,7 @@ __global__ void ConvolutionKernel(Matrix M, Matrix N, Matrix P)
 	int KR = KERNEL_SIZE/2;
 	int i, j;
 
-	__shared__ float sN[BLOCK_SIZE + 4][BLOCK_SIZE + 4];
+	__shared__ float sN[THREAD_BLOCK_SIZE + 4][THREAD_BLOCK_SIZE + 4];
 
 	i = x - KR; j = y - KR;
 	if (i < 0 || j < 0)
