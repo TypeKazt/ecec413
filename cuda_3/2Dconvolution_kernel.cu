@@ -26,7 +26,7 @@ __global__ void ConvolutionKernel(Matrix M, Matrix N, Matrix P)
 		sN[ty][tx] = 0.f;
 	else
 		sN[ty][tx] = N.elements[tid - KR - KR * N.width];
-	__syncthreads()
+	__syncthreads();
 
 	i = x + KR; j = y - KR;
 	if (i > N.width - 1 || j < 0)
@@ -57,7 +57,7 @@ __global__ void ConvolutionKernel(Matrix M, Matrix N, Matrix P)
 	// convolute
 	for (i = 0; i < KERNEL_SIZE; i ++)
 		for (j = 0; j < KERNEL_SIZE; j++)
-			sum += sN[ty + i][tx + j] * sM[i][j];
+			sum += sN[ty + i][tx + j] * sN[i][j];
 
 	if (tx < N.width && ty < N.height)
 		P.elements[tid] = sum;
