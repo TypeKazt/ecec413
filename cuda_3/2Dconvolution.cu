@@ -81,9 +81,6 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     int num_elements = MATRIX_SIZE*MATRIX_SIZE;
     dim3 grid(32);
     dim3 thread(64);
-    
-    struct timeval start, stop;
-       gettimeofday(&start, NULL);
 
     cudaMemcpyToSymbol(kernel_c, M.elements, 25*sizeof(float)); 
 
@@ -91,7 +88,7 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     gettimeofday(&start, NULL);
 
     // Launch the device computation threads!
-    ConvolutionKernel<<<grid, block>>>(Nd, Pd, num_elements);
+    ConvolutionKernel<<<grid, thread>>>(Nd, Pd, num_elements);
     cudaThreadSynchronize();
 
     gettimeofday(&stop, NULL);
@@ -102,7 +99,6 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     CopyFromDeviceMatrix(P, Pd); 
 
     // Free device matrices
-    FreeDeviceMatrix(&Md);
     FreeDeviceMatrix(&Nd);
     FreeDeviceMatrix(&Pd);
 
