@@ -6,8 +6,6 @@
 #include "2Dconvolution.h"
 
 // __global__ void ConvolutionKernel(Matrix M, Matrix N, Matrix P, int matrix_size)
-__constant__ float sM[KERNEL_SIZE][KERNEL_SIZE];
-
 
 __global__ void ConvolutionKernel(Matrix N, Matrix P, int num_elements)
 

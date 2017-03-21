@@ -68,20 +68,24 @@ int main(int argc, char** argv)
 void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
 {
     // Load M and N to the device
-    Matrix Md = AllocateDeviceMatrix(M);
+    //Matrix Md = AllocateDeviceMatrix(M);
+    //CopyToDeviceMatrix(Md, M);
     Matrix Nd = AllocateDeviceMatrix(N);
+    CopyToDeviceMatrix(Nd, N);
 
     // Allocate P on the device
     Matrix Pd = AllocateDeviceMatrix(P);
+    CopyToDeviceMatrix(Pd, P); // Clear memory
 
     // Setup the execution configuration
-    int num_elements = MATRIX_SIZE * MATRIX_SIZE;
-    dim3 grid((P.width + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, (P.height + THREAD_BLOCK_SIZE -1)/THREAD_BLOCK_SIZE, 1);
-    dim3 block(THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE, 1);
+    int num_elements = MATRIX_SIZE*MATRIX_SIZE;
+    dim3 grid(32);
+    dim3 thread(64);
+    
+    struct timeval start, stop;
+       gettimeofday(&start, NULL);
 
-    cudaMemcpyToSymbol(kernel_c, M.elements, M.width*M.height*sizeof(float));
-    CopyToDeviceMatrix(Nd, N);
-    CopyToDeviceMatrix(Pd, P);
+    cudaMemcpyToSymbol(kernel_c, M.elements, 25*sizeof(float)); 
 
     struct timeval start, stop;
     gettimeofday(&start, NULL);
