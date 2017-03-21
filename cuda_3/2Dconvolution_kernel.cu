@@ -5,29 +5,25 @@
 #include <stdio.h>
 #include "2Dconvolution.h"
 
-// __global__ void ConvolutionKernel(Matrix M, Matrix N, Matrix P, int matrix_size)
-__constant__ float sM[KERNEL_SIZE][KERNEL_SIZE];
-
-__global__ void ConvolutionKernel(Matrix N, Matrix P, int num_elements)
+__global__ void ConvolutionKernel(Matrix N, Matrix P)
 
 {
 
     int threadId = blockIdx.x * blockDim.x + threadIdx.x;
     int idx = threadId;
-    int i, j, m, n, pointi, pointj;
+    int i, j, m, n, point_i, point_j;
     double sum;
-    int len = N.width;
 
     while (idx < num_elements){
         sum = 0;
-        i = idx/len;
-        j = idx%len;
+        i = idx/N.width;
+        j = idx%N.width;
         for (m = 0; m < 5; m++){
             for (n = 0; n < 5; n++){
-                pointi = i+m-2;
-                pointj = j+n-2;
-                if (!(pointi < 0 || pointj < 0 || pointi >= len || pointj >= len)){
-                    sum+= kernel_c[m * 5 + n] * N.elements[pointi*len+pointj];
+                point_i = i+m-2;
+                point_j = j+n-2;
+                if (!(point_i < 0 || point_j < 0 || point_i >= N.width || point_j >= N.width)){
+                    sum+= kernel_c[m * 5 + n] * N.elements[point_i*N.width+point_j];
                 }
             }
         }

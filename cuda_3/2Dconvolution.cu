@@ -67,9 +67,8 @@ int main(int argc, char** argv)
 
 void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
 {
-    // Load M and N to the device
-    //Matrix Md = AllocateDeviceMatrix(M);
-    //CopyToDeviceMatrix(Md, M);
+   // Load M to the device
+
     Matrix Nd = AllocateDeviceMatrix(N);
     CopyToDeviceMatrix(Nd, N);
 
@@ -78,9 +77,8 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     CopyToDeviceMatrix(Pd, P); // Clear memory
 
     // Setup the execution configuration
-    int num_elements = MATRIX_SIZE*MATRIX_SIZE;
-    dim3 grid(32);
-    dim3 thread(64);
+    dim3 grid(THREAD_BLOCK_SIZE);
+    dim3 thread(THREAD_BLOCK_SIZE*2);
 
     cudaMemcpyToSymbol(kernel_c, M.elements, 25*sizeof(float)); 
 
@@ -88,12 +86,11 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     gettimeofday(&start, NULL);
 
     // Launch the device computation threads!
-    ConvolutionKernel<<<grid, thread>>>(Nd, Pd, num_elements);
+    ConvolutionKernel<<<grid, thread>>>(Nd, Pd);
     cudaThreadSynchronize();
 
     gettimeofday(&stop, NULL);
     printf("GPU Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
-
 
     // Read P from the device
     CopyFromDeviceMatrix(P, Pd); 
@@ -101,7 +98,6 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     // Free device matrices
     FreeDeviceMatrix(&Nd);
     FreeDeviceMatrix(&Pd);
-
 }
 
 // Allocate a device matrix of same size as M.
