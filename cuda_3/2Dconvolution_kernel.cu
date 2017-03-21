@@ -27,7 +27,7 @@ __global__ void ConvolutionKernel(Matrix M, Matrix N, Matrix P)
   if (x < KERNEL_SIZE && y < KERNEL_SIZE)
     sM[y][x] = M.elements[x + y * M.width];*/
 
-  __shared__ float sN[BLOCK_SIZE + 4][BLOCK_SIZE  + 4];
+  __shared__ float sN[THREAD_BLOCK_SIZE + 4][THREAD_BLOCK_SIZE  + 4];
 
   // Handle 4 corner cases of P
   i = x - KR; j = y - KR;
