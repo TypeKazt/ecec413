@@ -81,6 +81,7 @@ void ConvolutionOnDevice(const Matrix M, const Matrix N, Matrix P)
     dim3 block(THREAD_BLOCK_SIZE, THREAD_BLOCK_SIZE, 1);
 
     printf("performing vector dot product on GPU. \n");
+    struct timeval start, stop;
     gettimeofday(&start, NULL);
 
     // Launch the device computation threads!
