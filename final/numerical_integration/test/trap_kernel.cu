@@ -2,7 +2,7 @@
 #define _VECTOR_DOT_PRODUCT_KERNEL_H_
 
 #define BLOCK_SIZE 1024
-#define GRID_SIZE 1024
+#define GRID_SIZE 30
 
 /* Edit this function to complete the functionality of dot product on the GPU. 
 	You may add other kernel functions as you deem necessary. 

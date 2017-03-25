@@ -18,6 +18,11 @@ float compute_on_device(float , float ,int, float);
 void check_for_error(char *);
 extern "C" float compute_gold( float , float , int, float);
 
+float 
+fab(float x) {
+    return (x + 1)/sqrt(x*x + x + 1);
+}
+
 int main( int argc, char** argv) 
 {
 	if(argc != 2){
@@ -41,21 +46,14 @@ void run_test(unsigned int num_elements)
 	float b = RIGHT_ENDPOINT;
 	float h = (b-a)/(float)n; // Height of each trapezoid  
 	
-	// Randomly generate input data. Initialize the input data to be floating point values between [-.5 , 5]
-/*	printf("Generating random vectors with values between [-.5, .5]. \n");	
-	srand(time(NULL));
-	for(unsigned int i = 0; i < num_elements; i++){
-		A[i] = (float)rand()/(float)RAND_MAX - 0.5;
-		B[i] = (float)rand()/(float)RAND_MAX - 0.5;
-	}
 	
-*/	printf("Generating intergral on CPU. \n");
+	printf("Generating intergral on CPU. \n");
 
 	struct timeval start, stop;
 	gettimeofday(&start, NULL);
 
 	// Compute the reference solution on the CPU
-	float reference = compute_gold(a, b, n, h);
+	double reference = compute_gold(a, b, n, h);
 
 	gettimeofday(&stop, NULL);
 	printf("Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
@@ -63,7 +61,7 @@ void run_test(unsigned int num_elements)
 
 	/* Edit this function to compute the result vector on the GPU. 
        The result should be placed in the gpu_result variable. */
-	float gpu_result = compute_on_device(a, b, n, h);
+	double gpu_result = compute_on_device(a, b, n, h);
 
     /* Compare the CPU and GPU results. */
     float threshold = 0.001;
@@ -84,7 +82,7 @@ float compute_on_device(float A, float B, int num_elements, float h)
 	// Device vectors
 	float *C_on_device = NULL;
 
-	// allocate space and copy data to device for 3 vectors
+	// allocate space and copy data to device for 1 vectors
 
 	cudaMalloc((void**)&C_on_device, GRID_SIZE*sizeof(float));
 	cudaMemset(C_on_device, 0.0, GRID_SIZE*sizeof(float));
@@ -114,6 +112,7 @@ float compute_on_device(float A, float B, int num_elements, float h)
 	/* Copy first element of C_on_device to result */
 	float result = 0.0;
 	cudaMemcpy( &result, C_on_device, sizeof(float), cudaMemcpyDeviceToHost);
+	result += (fab(A) + fab(B))/2.0;
 	result *= h;
 	
 	/* Free allocated vectors */
