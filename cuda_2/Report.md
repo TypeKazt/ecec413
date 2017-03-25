@@ -1,3 +1,4 @@
+﻿
 # Cuda Assignment #2
 ### By: Alex Kazantsev and Hanumant Mahida
 ### Date: March 19th, 2017
