@@ -76,7 +76,7 @@ void compact_stream(void)
 }
 
 // Use the GPU to compact the h_data stream 
-int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_elements)
+float compact_stream_on_device(float *result_d, float *h_data, unsigned int num_elements)
 {
     int *n = 0; // Number of elements in the compacted stream
     int *n_device = NULL;
@@ -84,8 +84,8 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     float *result_device = NULL;
     float *h_device = NULL;
 
-    cudaMalloc((void**)&n_device, sizeof(int));
-    cudaMemcpy(n_device, *n, sizeof(int), cudaMemcpyHostToDevice);
+    cudaMalloc((void**)&n_device, sizeof(int)));
+    cudaMemcpy(n_device, n, sizeof(int), cudaMemcpyHostToDevice);
 
     cudaMalloc((void**)&result_device, num_elements*sizeof(float));
     cudaMemcpy(result_device, result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
