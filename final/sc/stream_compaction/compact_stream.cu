@@ -113,14 +113,15 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     printf("size of h_device %f\n", sizeof(h_device));
     printf("n_device %f", n_device);
 
-    cudaMemcpy(float n_final, n_device, sizeof(int), cudaMemcpyDeviceToHost);
+    float *n_final;
+    cudaMemcpy(n_final, n_device, sizeof(int), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
 
     cudaFree(result_device);
     cudaFree(h_device);
     cudaFree(n_device);
 
-    return n_final;
+    return *n_final;
 }
 
 
