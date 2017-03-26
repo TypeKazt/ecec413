@@ -118,7 +118,7 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     cudaFree(h_device);
     cudaFree(n_device);
 
-    return n;
+    return *n;
 }
 
 

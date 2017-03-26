@@ -84,7 +84,7 @@ __global__ void compact_stream_kernel(float *reference, float *idata, unsigned i
 
     for (unsigned int i = 0; i < len; i++) {
         if (idata[idx] > 0.0) {
-            reference[n++] = idata[idx];
+            reference[*n++] = idata[idx];
         }
     }
 
