@@ -24,6 +24,15 @@ void checkCUDAError(const char *msg);
 int checkResults(float *reference, float *gpu_result, int num_elements, float threshold);
 
 
+/* This function checks for errors returned by the CUDA run time. */
+void check_for_error(char *msg){
+	cudaError_t err = cudaGetLastError();
+	if(cudaSuccess != err){
+		printf("CUDA ERROR: %s (%s). \n", msg, cudaGetErrorString(err));
+		exit(EXIT_FAILURE);
+	}
+} 
+
 int 
 main(int argc, char** argv) 
 {
@@ -47,7 +56,15 @@ main(int argc, char** argv)
 	// Perform Gaussian elimination on the CPU 
 	Matrix reference = allocate_matrix(MATRIX_SIZE, MATRIX_SIZE, 0);
 
+	struct timeval start, stop;
+
+	printf("performing gauss elm on CPU. \n");
+	gettimeofday(&start, NULL);
 	int status = compute_gold(reference.elements, A.elements, A.num_rows);
+	gettimeofday(&stop, NULL);
+	printf("Execution time CPU = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
+
+
 	
 	if(status == 0){
 		printf("Failed to convert given matrix to upper triangular. Try again. Exiting. \n");
@@ -67,6 +84,8 @@ main(int argc, char** argv)
 	int num_elements = MATRIX_SIZE*MATRIX_SIZE;
     int res = checkResults(reference.elements, U.elements, num_elements, 0.001f);
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
+	
+	write_matrix_to_file(U);
 
 	// Free host matrices
 	free(A.elements); A.elements = NULL;
@@ -79,6 +98,37 @@ main(int argc, char** argv)
 
 void 
 gauss_eliminate_on_device(const Matrix A, Matrix U){
+	
+	int i, j;
+	int num_elements = MATRIX_SIZE;
+	for (i = 0; i < num_elements; i ++)
+		for(j = 0; j < num_elements; j++)
+			U.elements[num_elements * i + j] = A.elements[num_elements*i + j];
+
+	Matrix Ud = allocate_matrix_on_gpu(U);
+	copy_matrix_to_device(Ud, U);
+
+	// Thread block and grid inits
+	dim3 dimBlock((num_elements <= 1024) ? num_elements: 1024, 1, 1);
+	dim3 dimGrid(int(num_elements/1024)? 1:int(num_elements/1024), 1);
+
+	//dim3 dimBlock(1024, 1, 1);
+	//dim3 dimGrid(1, 1);
+
+	struct timeval start, stop;
+
+	printf("performing gauss elm on GPU. \n");
+	gettimeofday(&start, NULL);
+	for(int k = 0; k < MATRIX_SIZE; k++)
+	{
+		gauss_eliminate_kernel <<< dimGrid, dimBlock >>> (Ud.elements, k, num_elements);
+		cudaThreadSynchronize();
+	}
+	copy_matrix_from_device(U, Ud);
+	gettimeofday(&stop, NULL);
+	printf("Execution time GPU = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
+
+	check_for_error("Error in kernel");
 }
 
 // Allocate a device matrix of same size as M.
@@ -160,7 +210,9 @@ write_matrix_to_file(const Matrix M){
 	fp = fopen("matrix.txt", "wt");
 	for(unsigned int i = 0; i < M.num_rows; i++){
         for(unsigned int j = 0; j < M.num_columns; j++)
-            fprintf(fp, "%f", M.elements[i*M.num_rows + j]);
+            fprintf(fp, "%f, ", M.elements[i*M.num_rows + j]);
+		
+        fprintf(fp, "\n");
         }
     fclose(fp);
 }
@@ -183,7 +235,11 @@ checkResults(float *reference, float *gpu_result, int num_elements, float thresh
     float epsilon = 0.0;
     
     for(int i = 0; i < num_elements; i++)
-        if(fabsf((reference[i] - gpu_result[i])/reference[i]) > threshold){
+		//if(fabsf((reference[i] - gpu_result[i])/reference[i]) > threshold){
+        if(fabsf((reference[i] - gpu_result[i])) > threshold){
+			printf("reference[i] = %f\n", reference[i]);
+			printf("gpu[i] = %f\n", gpu_result[i]);
+			printf("i= %d\n", i);
             checkMark = 0;
             break;
         }

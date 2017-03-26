@@ -22,14 +22,14 @@ __global__ void vector_dot_product_kernel(int num_elements, float a, float h, fl
 
 	float local_thread_sum = 0.0;
 	volatile float c = 0.0;
-	unsigned int i = threadID;
+	unsigned int i = threadID+1;
 
-	while(i < num_elements){
-		float y = fx(a+ h*i) - c;
+	while(i < num_elements-1){
+		/*float y = fx(a+ h*i) - c;
 		float t = local_thread_sum + y;
 		c = (t-local_thread_sum) - y;
-		local_thread_sum = t;
-		//local_thread_sum += fx(a+ h*i);
+		local_thread_sum = t;*/
+		local_thread_sum += fx(a+ h*i);
 		i += stride;
 	}
 
@@ -41,12 +41,12 @@ __global__ void vector_dot_product_kernel(int num_elements, float a, float h, fl
 
 	for(int stride = blockDim.x/2; stride > 0; stride /= 2){
 		if(tx < stride){
-			float y = runningSums[tx+stride] - c;
+			/*float y = runningSums[tx+stride] - c;
 			float t = runningSums[tx] + y;
 			c = (t-runningSums[tx]) - y;
-			runningSums[tx] = t;
+			runningSums[tx] = t;*/
+			runningSums[tx] += runningSums[tx+stride];
 		}
-			//runningSums[tx] += runningSums[tx+stride];
 		__syncthreads();
 	}
 

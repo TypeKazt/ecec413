@@ -9,7 +9,7 @@
 #include "trap_kernel.cu"
 #define LEFT_ENDPOINT 10
 #define RIGHT_ENDPOINT 1005
-#define NUM_TRAPEZOIDS 100000000
+#define NUM_TRAPEZOIDS 10
 
 
 
@@ -72,7 +72,7 @@ void run_test()
 	gettimeofday(&start, NULL);
 
 	// Compute the reference solution on the CPU
-	double reference = compute_gold(a, b, 100000000, h);
+	double reference = compute_gold(a, b, NUM_TRAPEZOIDS, h);
 
 	gettimeofday(&stop, NULL);
 	printf("Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
@@ -80,7 +80,7 @@ void run_test()
 
 	/* Edit this function to compute the result vector on the GPU. 
        The result should be placed in the gpu_result variable. */
-	double gpu_result = compute_on_device(a, b, 100000000, h);
+	double gpu_result = compute_on_device(a, b, NUM_TRAPEZOIDS, h);
 
     /* Compare the CPU and GPU results. */
     float threshold = 0.001;
@@ -134,6 +134,9 @@ float compute_on_device(float A, float B, int num_elements, float h)
 	float result = 0.0;
 	cudaMemcpy( &result, C_on_device, sizeof(float), cudaMemcpyDeviceToHost);
 	double pre =  (fab(A) + fab(B))/2.0f; 
+	printf("pre: %f\n", pre);
+	printf("pre result: %f \n", result);
+	printf("h: %f \n", h);
 	result += pre;
 	result *= h;
 	
