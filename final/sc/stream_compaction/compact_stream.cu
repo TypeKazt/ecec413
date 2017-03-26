@@ -44,18 +44,27 @@ void compact_stream(void)
              h_data[i] = -floorf(1000*(rand()/(float)RAND_MAX));
      }
 
+    struct timeval start, stop;
+    gettimeofday(&start, NULL);
 
     /* Compute reference solution. The function compacts the stream and stores the 
        length of the new steam in num_elements. */
     float *reference = (float *) malloc(mem_size);  
     int stream_length_cpu;
     stream_length_cpu = compact_stream_gold(reference, h_data, num_elements);
+    
+    gettimeofday(&stop, NULL);
+        printf("CPU Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
+
+    printf("reference: %d\n", reference);
+    printf("stream_length_cpu: %d\n", stream_length_cpu);
 
   	/* Add your code to perform the stream compaction on the GPU. 
        Store the result in gpu_result. */
     float *result_d = (float *) malloc(mem_size);
     int stream_length_d;
     stream_length_d = compact_stream_on_device(result_d, h_data, num_elements);
+    printf("stream_length_d: %d\n", stream_length_d);
 
 	// Compare the reference solution with the GPU-based solution
     int res = checkResults(reference, result_d, stream_length_cpu, 0.0f);
@@ -70,6 +79,37 @@ void compact_stream(void)
 int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_elements)
 {
     int n = 0; // Number of elements in the compacted stream
+    // device vectors
+    float *result_device = NULL;
+    float *h_device = NULL;
+
+    cudaMalloc((void**)&result_device, num_elements*sizeof(float));
+    cudaMemcpy(result_device, result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
+ 
+    cudaMalloc((void**)&h_device, num_elements*sizeof(float));
+    cudaMemcpy(h_device, h_data, num_elements*sizeof(float), cudaMemcpyHostToDevice);
+  
+    // device mutex
+    int *mutex = NULL;
+    cudaMalloc((void **)&mutex, sizeof(int));
+    cudaMemset(mutex, 0, sizeof(int));
+
+    // thread block and grid inits
+    dim3 threads(TILE_SIZE, TILE_SIZE);
+    dim3 grid(num_elements); // not sure if correct
+
+    struct timeval start, stop;
+    gettimeofday(&start, NULL);
+    compact_stream_kernel<<<grid, threads>>>(result_device, h_device, num_elements);
+    cudaThreadSynchronize();
+
+    gettimeofday(&stop, NULL);
+    printf("GPU: Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
+
+    cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
+
+    cudaFree(result_device);
+    cudaFree(h_device);
 
     return n;
 }
