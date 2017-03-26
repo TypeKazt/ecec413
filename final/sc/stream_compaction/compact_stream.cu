@@ -85,13 +85,13 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     float *h_device = NULL;
 
     cudaMalloc((void**)&n_device, sizeof(int));
-    cudaMemcpy(n_device, n, sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(n_device, &n, sizeof(int), cudaMemcpyHostToDevice);
 
     cudaMalloc((void**)&result_device, num_elements*sizeof(float));
-    cudaMemcpy(result_device, result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(result_device, &result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
  
     cudaMalloc((void**)&h_device, num_elements*sizeof(float));
-    cudaMemcpy(h_device, h_data, num_elements*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(h_device, &h_data, num_elements*sizeof(float), cudaMemcpyHostToDevice);
   
     // device mutex
     int *mutex = NULL;
@@ -114,17 +114,16 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     // printf("*n %d\n", *n);
     // printf("n_device %d\n", n_device);
 
-    printf("bebug 1 \n");
+    // printf("bebug line #: 117 \n");
     cudaMemcpy(n, n_device, sizeof(int), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
 
-    printf("bebug 2 \n");
 
     cudaFree(result_device);
     cudaFree(h_device);
     cudaFree(n_device);
 
-    return *n;
+    return n;
 }
 
 
