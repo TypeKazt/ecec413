@@ -19,8 +19,8 @@ LD_LIBRARY_PATH	:= /usr/local/cuda/lib64
 
 all: trap
 
-trap: trap.cu trap_gold.cpp 
-	$(NVCC) -o trap trap.cu trap_gold.cpp $(NVCCFLAGS)
+trap: trap.cu 
+	$(NVCC) -o trap trap.cu $(NVCCFLAGS)
 
 clean:
 	rm trap
