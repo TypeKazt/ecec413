@@ -80,20 +80,20 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
 {
     int result = 0;
     int *n = 0; // Number of elements in the compacted stream
-    int *n_device = NULL;
+    //int *n_device = NULL;
     // device vectors
     float *result_device = NULL;
     float *h_device = NULL;
 
-    cudaMalloc((void**)&n_device, sizeof(int));
-    cudaMemcpy(n_device, &n, sizeof(int), cudaMemcpyHostToDevice);
+    //cudaMalloc((void**)&n_device, sizeof(int));
+    //cudaMemcpy(n_device, &n, sizeof(int), cudaMemcpyHostToDevice);
 
     cudaMalloc((void**)&result_device, num_elements*sizeof(float));
-    cudaMemcpy(result_device, &result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(result_device, result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
  
     cudaMalloc((void**)&h_device, num_elements*sizeof(float));
-    cudaMemcpy(h_device, &h_data, num_elements*sizeof(float), cudaMemcpyHostToDevice);
-  
+    cudaMemcpy(h_device, h_data, num_elements*sizeof(float), cudaMemcpyHostToDevice);
+
     // device mutex
     int *mutex = NULL;
     cudaMalloc((void **)&mutex, sizeof(int));
@@ -105,20 +105,23 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
 
     struct timeval start, stop;
     gettimeofday(&start, NULL);
-    compact_stream_kernel<<<grid, threads>>>(result_device, h_device, num_elements, n_device);
+    compact_stream_kernel<<<grid, threads>>>(result_device, h_device, num_elements, n);
     cudaThreadSynchronize();
 
     gettimeofday(&stop, NULL);
     printf("GPU: Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
-    cudaMemcpy(&result, n_device, sizeof(int), cudaMemcpyDeviceToHost);
-    cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
-
+    //cudaMemcpy(&result, n_device, sizeof(int), cudaMemcpyDeviceToHost);
+    //cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
+    printf("debug line #116"); 
     cudaFree(result_device);
+    printf("debug line #118");
     cudaFree(h_device);
-    cudaFree(n_device);
-    
-    printf("result is: %d \n", result); 
+    printf("debug line #119"); 
+    printf("result is: %d \n", *n); 
+    printf("debug line #121");
+    result = *n;
+    printf("debug line #123");
     return result;
 }
 
