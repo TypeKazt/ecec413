@@ -62,9 +62,9 @@ void compact_stream(void)
   	/* Add your code to perform the stream compaction on the GPU. 
        Store the result in gpu_result. */
     float *result_d = (float *) malloc(mem_size);
-    int stream_length_d;
-    stream_length_d = compact_stream_on_device(result_d, h_data, num_elements);
-    printf("stream_length_d: %d\n", stream_length_d);
+    int *stream_length_d;
+    *stream_length_d = compact_stream_on_device(result_d, h_data, num_elements);
+    printf("stream_length_d: %d\n", *stream_length_d);
 
 	// Compare the reference solution with the GPU-based solution
     int res = checkResults(reference, result_d, stream_length_cpu, 0.0f);
