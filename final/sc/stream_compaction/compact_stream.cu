@@ -79,9 +79,13 @@ void compact_stream(void)
 int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_elements)
 {
     int n = 0; // Number of elements in the compacted stream
+    int n_device = NULL;
     // device vectors
     float *result_device = NULL;
     float *h_device = NULL;
+
+    cudaMalloc((void**)&result_device, sizeof(int));
+    cudaMemcpy(n_device, n, sizeof(int));
 
     cudaMalloc((void**)&result_device, num_elements*sizeof(float));
     cudaMemcpy(result_device, result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
@@ -100,16 +104,18 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
 
     struct timeval start, stop;
     gettimeofday(&start, NULL);
-    compact_stream_kernel<<<grid, threads>>>(result_device, h_device, num_elements);
+    compact_stream_kernel<<<grid, threads>>>(result_device, h_device, num_elements, n);
     cudaThreadSynchronize();
 
     gettimeofday(&stop, NULL);
     printf("GPU: Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
+    cudaMemcpy(n, n_device, sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
 
     cudaFree(result_device);
     cudaFree(h_device);
+    cudaFree(n_device);
 
     return n;
 }
