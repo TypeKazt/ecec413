@@ -110,15 +110,17 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     gettimeofday(&stop, NULL);
     printf("GPU: Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
-    cudaMemcpy(*n, n_device, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("size of h_device %f\n", sizeof(h_device));
+    printf("n_device %f", n_device);
+
+    cudaMemcpy(float n_final, n_device, sizeof(int), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
 
-    printf("size of h_device %f", sizeof(h_device));
     cudaFree(result_device);
     cudaFree(h_device);
     cudaFree(n_device);
 
-    return *n;
+    return n_final;
 }
 
 
