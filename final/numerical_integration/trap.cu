@@ -9,7 +9,7 @@
 #include "trap_kernel.cu"
 #define LEFT_ENDPOINT 10
 #define RIGHT_ENDPOINT 1005
-#define NUM_TRAPEZOIDS 10
+#define NUM_TRAPEZOIDS 1000000
 
 
 
@@ -119,10 +119,10 @@ float compute_on_device(float A, float B, int num_elements, float h)
 
 	struct timeval start, stop;
 
-	printf("performing vector dot product on GPU. \n");
+	printf("performing integral on GPU. \n");
 	gettimeofday(&start, NULL);
 
-	vector_dot_product_kernel <<< dimGrid, dimBlock >>> (num_elements, A, B, C_on_device, mutex);
+	integrate <<< dimGrid, dimBlock >>> (num_elements, A, B, C_on_device, mutex);
 	cudaThreadSynchronize();
 
 	gettimeofday(&stop, NULL);
@@ -134,9 +134,6 @@ float compute_on_device(float A, float B, int num_elements, float h)
 	float result = 0.0;
 	cudaMemcpy( &result, C_on_device, sizeof(float), cudaMemcpyDeviceToHost);
 	double pre =  (fab(A) + fab(B))/2.0f; 
-	printf("pre: %f\n", pre);
-	printf("pre result: %f \n", result);
-	printf("h: %f \n", h);
 	result += pre;
 	result *= h;
 	

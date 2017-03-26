@@ -109,17 +109,17 @@ gauss_eliminate_on_device(const Matrix A, Matrix U){
 	copy_matrix_to_device(Ud, U);
 
 	// Thread block and grid inits
-	dim3 dimBlock((num_elements <= 1024) ? num_elements: 1024, 1, 1);
-	dim3 dimGrid(int(num_elements/1024)? 1:int(num_elements/1024), 1);
-
-	//dim3 dimBlock(1024, 1, 1);
-	//dim3 dimGrid(1, 1);
+	int blockd = ((num_elements <= 1024) ? num_elements: 1024);
+	int gridd = int(num_elements/1024)? int(num_elements/1024):1;
+	
+	dim3 dimBlock(blockd, 1, 1);
+	dim3 dimGrid(gridd, 1);
 
 	struct timeval start, stop;
 
 	printf("performing gauss elm on GPU. \n");
 	gettimeofday(&start, NULL);
-	for(int k = 0; k < MATRIX_SIZE; k++)
+	for(int k = 0; k < num_elements; k++)
 	{
 		gauss_eliminate_kernel <<< dimGrid, dimBlock >>> (Ud.elements, k, num_elements);
 		cudaThreadSynchronize();

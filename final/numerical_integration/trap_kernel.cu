@@ -12,7 +12,7 @@ __device__ void lock(int *mutex);
 __device__ void unlock(int *mutex);
 __device__ float fx(float x);
 
-__global__ void vector_dot_product_kernel(int num_elements, float a, float h, float* result, int *mutex)
+__global__ void integrate(int num_elements, float a, float h, float* result, int *mutex)
 {
 	__shared__ float runningSums[BLOCK_SIZE];
 
@@ -25,10 +25,6 @@ __global__ void vector_dot_product_kernel(int num_elements, float a, float h, fl
 	unsigned int i = threadID+1;
 
 	while(i < num_elements-1){
-		/*float y = fx(a+ h*i) - c;
-		float t = local_thread_sum + y;
-		c = (t-local_thread_sum) - y;
-		local_thread_sum = t;*/
 		local_thread_sum += fx(a+ h*i);
 		i += stride;
 	}
@@ -41,10 +37,6 @@ __global__ void vector_dot_product_kernel(int num_elements, float a, float h, fl
 
 	for(int stride = blockDim.x/2; stride > 0; stride /= 2){
 		if(tx < stride){
-			/*float y = runningSums[tx+stride] - c;
-			float t = runningSums[tx] + y;
-			c = (t-runningSums[tx]) - y;
-			runningSums[tx] = t;*/
 			runningSums[tx] += runningSums[tx+stride];
 		}
 		__syncthreads();

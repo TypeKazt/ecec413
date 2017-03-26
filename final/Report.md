@@ -5,16 +5,148 @@
 Note: Result summaries from Q1-Q3, then Theory questions are first, followed by the code from Q1-Q3.
 
 
-## Programing Question 1 (Gauss)
+## Programing Question 1 (Trap)
+Timing data:
+
+| Trap Size | CPU Time (s)  | CUDA Time (s) | Speed Improvement | 
+|-------------|-----------------|-----------|----------------------|
+| 1000000 | 0.040476 | 0.000064 | 632.4375 |
+| 10000000 | 0.296 | 0.000206 | 1436.8932 |
+| 100000000 | 2.331 | 0.001587 | 1468.809 |
+
+Code:
+
+Load data to GPU
+
+```C
+	float *C_on_device = NULL;
+
+	// allocate space and copy data to device for 1 vectors
+
+	cudaMalloc((void**)&C_on_device, GRID_SIZE*sizeof(float));
+	cudaMemset(C_on_device, 0.0, GRID_SIZE*sizeof(float));
+
+```
+
+Setup Execution Config (Block = 1024, Grid = 30) max threads
+```C
+	dim3 dimBlock(BLOCK_SIZE, 1, 1);
+	dim3 dimGrid(GRID_SIZE, 1);
+
+```
+
+Launch Device
+```C
+	integrate <<< dimGrid, dimBlock >>> (num_elements, A, B, C_on_device, mutex);
+	cudaThreadSynchronize();
+
+```
+Kernel 
+```C
+	__shared__ float runningSums[BLOCK_SIZE];
+
+	int tx = threadIdx.x;
+	int threadID = blockDim.x * blockIdx.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x;
+
+	float local_thread_sum = 0.0;
+	volatile float c = 0.0;
+	unsigned int i = threadID+1;
+
+	while(i < num_elements-1){
+		local_thread_sum += fx(a+ h*i);
+		i += stride;
+	}
 
 
+	runningSums[threadIdx.x] = local_thread_sum;
+	__syncthreads();
+
+	c = 0.0;
+
+	for(int stride = blockDim.x/2; stride > 0; stride /= 2){
+		if(tx < stride){
+			runningSums[tx] += runningSums[tx+stride];
+		}
+		__syncthreads();
+	}
+
+	if(threadIdx.x == 0) {
+		lock(mutex);
+		result[0] += runningSums[0];
+		unlock(mutex);
+	}
+```
 
 
-## Programming Question 2 (Trap)
+## Programming Question 2 (Gauss)
+
+Timing data:
+
+| Matrix Size | CPU Time (s)  | CUDA Time (s) | Speed Improvement | 
+|-------------|-----------------|-----------|----------------------|
+| 512 | 0.085277 | 0.112194 | 0.76 |
+| 1024 | 0.5376 | 0.7807 | 0.6886 |
+| 2048 | 3.7838 | 1.9009 | 1.9905 |
+
+Code:
+
+Load data to GPU
+
+```C
+	int i, j;
+	int num_elements = MATRIX_SIZE;
+	for (i = 0; i < num_elements; i ++)
+		for(j = 0; j < num_elements; j++)
+			U.elements[num_elements * i + j] = A.elements[num_elements*i + j];
+
+	Matrix Ud = allocate_matrix_on_gpu(U);
+	copy_matrix_to_device(Ud, U);
+
+```
+
+Setup Execution Config (Block = 1024, Grid = 30) max threads
+```C
+	int blockd = ((num_elements <= 1024) ? num_elements: 1024);
+	int gridd = int(num_elements/1024)? int(num_elements/1024):1;
+	
+	dim3 dimBlock(blockd, 1, 1);
+	dim3 dimGrid(gridd, 1);
+
+```
+
+Launch Device
+```C
+	for(int k = 0; k < num_elements; k++)
+	{
+		gauss_eliminate_kernel <<< dimGrid, dimBlock >>> (Ud.elements, k, num_elements);
+		cudaThreadSynchronize();
+	}
+```
+
+Kernel 
+```C
+	int tid = threadIdx.x + blockIdx.x*blockDim.x;
+	if (tid >= k+1){
+		U[num_elements * k + tid] = (float)(U[num_elements * k + tid] / U[num_elements * k + k]);
+	}
+	if (tid == k)
+		U[num_elements*k+k] = 1;
 
 
+	__syncthreads();
 
+	if (tid >= k+1){
+		for(int j = k+1; j < num_elements; j++)
+		{
+			U[num_elements * tid + j] -= U[num_elements * tid + k] * U[num_elements * k + j]; 
+		}
+	
+		
+		U[num_elements * tid + k] = 0;
+	}
 
+```
 
 ## Programming Question 3 (Compact Stream)
 
@@ -39,7 +171,7 @@ There are some solutions. One could use cudaGetDeviceProperties() to get the wra
 
 One could also write code with 1 warp and not use any __syncthreads() by changing the warp_size -- but this could be limited to the application. 
 
-Since __syncthreads() is a block wide barrier, it should be used to avoid shared memory race conditions. Avoiding its use does show significant per\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\formance gains, however it does race conditions and double-bufering becomes a worry.
+Since __syncthreads() is a block wide barrier, it should be used to avoid shared memory race conditions. Avoiding its use does show significant performance gains, however it does race conditions and double-bufering becomes a worry.
 
 
 
