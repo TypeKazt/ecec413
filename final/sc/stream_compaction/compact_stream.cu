@@ -78,14 +78,14 @@ void compact_stream(void)
 // Use the GPU to compact the h_data stream 
 int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_elements)
 {
-    float n = 0; // Number of elements in the compacted stream
-    float n_device = NULL;
+    int n = 0; // Number of elements in the compacted stream
+    int n_device = NULL;
     // device vectors
     float *result_device = NULL;
     float *h_device = NULL;
 
-    cudaMalloc((void**)&n, sizeof(float));
-    cudaMemcpy(n_device, n, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMalloc(&n, sizeof(int));
+    cudaMemcpy(n_device, n, sizeof(int), cudaMemcpyHostToDevice);
 
     cudaMalloc((void**)&result_device, num_elements*sizeof(float));
     cudaMemcpy(result_device, result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
@@ -110,7 +110,7 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     gettimeofday(&stop, NULL);
     printf("GPU: Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
-    cudaMemcpy(n, n_device, sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(n, n_device, sizeof(int), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
 
     printf("size of h_device %f", sizeof(h_device));
