@@ -1,35 +1,74 @@
-/* Write GPU kernels to compete the functionality of estimating the integral via the trapezoidal rule. */ 
+#ifndef _VECTOR_DOT_PRODUCT_KERNEL_H_
+#define _VECTOR_DOT_PRODUCT_KERNEL_H_
 
-__global__ void integration(float *g_result, float a, int n, float h)
+#define BLOCK_SIZE 1024
+#define GRID_SIZE 30
+
+/* Edit this function to complete the functionality of dot product on the GPU. 
+	You may add other kernel functions as you deem necessary. 
+ */
+
+__device__ void lock(int *mutex);
+__device__ void unlock(int *mutex);
+__device__ float fx(float x);
+
+__global__ void vector_dot_product_kernel(int num_elements, float a, float h, float* result, int *mutex)
 {
-	extern __shared__ float sdata[]
+	__shared__ float runningSums[BLOCK_SIZE];
 
-	unsigned int tid = threadIdx.x;
-	unsigned int i = blockIdx.x*blockDim.x + threadIdx.x;
-	float local_sum = 0;
+	int tx = threadIdx.x;
+	int threadID = blockDim.x * blockIdx.x + threadIdx.x;
 	int stride = blockDim.x * gridDim.x;
 
-	for(unsigned int j = i; j < n-1; j += stride)
-		local_sum += f(a+k*h); 
+	float local_thread_sum = 0.0;
+	volatile float c = 0.0;
+	unsigned int i = threadID;
 
-	sdata[threadIdx.x] = local_sum;
+	while(i < num_elements){
+		float y = fx(a+ h*i) - c;
+		float t = local_thread_sum + y;
+		c = (t-local_thread_sum) - y;
+		local_thread_sum = t;
+		//local_thread_sum += fx(a+ h*i);
+		i += stride;
+	}
+
+
+	runningSums[threadIdx.x] = local_thread_sum;
 	__syncthreads();
 
+	c = 0.0;
 
-	for(unsigned int s=blockDim.x/2; s > 0; s>>=1)
-	{
-		if(tid < s)
-		{
-			sdata[tid] += sdata[tid + s];
+	for(int stride = blockDim.x/2; stride > 0; stride /= 2){
+		if(tx < stride){
+			float y = runningSums[tx+stride] - c;
+			float t = runningSums[tx] + y;
+			c = (t-runningSums[tx]) - y;
+			runningSums[tx] = t;
 		}
+			//runningSums[tx] += runningSums[tx+stride];
 		__syncthreads();
-	} 
+	}
 
-	if(tid == 0) g_odata[blockIdx.x] = sdata[0];
+	if(threadIdx.x == 0) {
+		lock(mutex);
+		result[0] += runningSums[0];
+		unlock(mutex);
+	}
+}
+
+
+__device__ void lock(int *mutex){
+	while(atomicCAS(mutex, 0, 1) != 0);
+}
+
+__device__ void unlock(int *mutex){
+	atomicExch(mutex, 0);
 }
 
 __device__ float 
-f(float x) {
+fx(float x) {
     return (x + 1)/sqrt(x*x + x + 1);
-} 
+}
 
+#endif // #ifndef _VECTOR_DOT_PRODUCT_KERNEL_H
