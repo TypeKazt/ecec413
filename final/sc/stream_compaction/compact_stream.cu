@@ -85,7 +85,7 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     float *h_device = NULL;
 
     cudaMalloc((void**)&n_device, sizeof(int));
-    cudaMemcpy(n_device, n, sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(n_device, *n, sizeof(int), cudaMemcpyHostToDevice);
 
     cudaMalloc((void**)&result_device, num_elements*sizeof(float));
     cudaMemcpy(result_device, result_d, num_elements*sizeof(float), cudaMemcpyHostToDevice);
@@ -110,19 +110,18 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     gettimeofday(&stop, NULL);
     printf("GPU: Execution time = %fs. \n", (float)(stop.tv_sec - start.tv_sec + (stop.tv_usec - start.tv_usec)/(float)1000000));
 
-    printf("size of h_device %d\n", sizeof(h_device));
+    printf("size of h_device %d\n", (h_device));
     printf("n_device %d\n", *n);
     printf("n_device %d\n", n_device);
 
-    float *n_final;
-    cudaMemcpy(n_final, n_device, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(n, n_device, sizeof(int), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
 
     cudaFree(result_device);
     cudaFree(h_device);
     cudaFree(n_device);
 
-    return *n_final;
+    return n;
 }
 
 
