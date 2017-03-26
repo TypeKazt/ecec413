@@ -77,13 +77,14 @@ __global__ void scan_naive(float *g_odata, float *g_idata, int n)
 
 
 // Add additional kernels here
-__global__ void compact_stream_kernel(float *reference, float *idata, unsigned int len, unsigned int *n)
+__global__ void compact_stream_kernel(float *reference, float *idata, unsigned int len)
 {
-    // int idx = blockIdx.x*blockDim.x + threadIdx.x;
+    // index from block and thread
+    int idx = blockIdx.x*blockDim.x + threadIdx.x;
 
     for (unsigned int i = 0; i < len; i++) {
-        if (idata[i] > 0.0) {
-            reference[n++] = idata[i];
+        if (idata[idx] > 0.0) {
+            reference[n++] = idata[idx];
         }
     }
 
