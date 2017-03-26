@@ -78,6 +78,7 @@ void compact_stream(void)
 // Use the GPU to compact the h_data stream 
 int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_elements)
 {
+    int final = 0;
     int *n = 0; // Number of elements in the compacted stream
     int *n_device = NULL;
     // device vectors
@@ -114,16 +115,20 @@ int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_el
     // printf("*n %d\n", *n);
     // printf("n_device %d\n", n_device);
 
-    // printf("bebug line #: 117 \n");
-    cudaMemcpy(n, n_device, sizeof(int), cudaMemcpyDeviceToHost);
+    printf("debug line #117 \n");
+    cudaMemcpy(n, n_device, sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(h_data, h_device, num_elements*sizeof(float), cudaMemcpyDeviceToHost);
 
+    printf("debug line #120 \n");
 
     cudaFree(result_device);
     cudaFree(h_device);
     cudaFree(n_device);
 
-    return n;
+    printf("debug line #126 \n");
+    final = *n;
+    printf("debug line #128 \n");
+    return final;
 }
 
 
