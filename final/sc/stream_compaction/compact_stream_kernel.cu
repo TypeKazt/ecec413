@@ -30,6 +30,8 @@
 #ifndef _SCAN_NAIVE_KERNEL_H_
 #define _SCAN_NAIVE_KERNEL_H_
 
+#include "compact_stream.h"
+
 ///////////////////////////////////////////////////////////////////////////////
 //! Naive compute implementation of scan, one thread per element
 //! Not work efficient: log(n) steps, but n * (log(n) - 1) adds.
@@ -75,8 +77,16 @@ __global__ void scan_naive(float *g_odata, float *g_idata, int n)
 
 
 // Add additional kernels here
-__global__ void compact_stream_kernel()
+__global__ void compact_stream_kernel(float *reference, float *idata, unsigned int len, unsigned int *n)
 {
+    // int idx = blockIdx.x*blockDim.x + threadIdx.x;
+
+    for (unsigned int i = 0; i < len; i++) {
+        if (idata[i] > 0.0) {
+            reference[n++] = idata[i];
+        }
+    }
+
 }
 
 #endif // #ifndef _SCAN_NAIVE_KERNEL_H_

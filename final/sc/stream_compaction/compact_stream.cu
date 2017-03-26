@@ -49,7 +49,8 @@ void compact_stream(void)
        length of the new steam in num_elements. */
     float *reference = (float *) malloc(mem_size);  
     int stream_length_cpu;
-    stream_length_cpu = compact_stream_gold(reference, h_data, num_elements);
+    compact_stream_gold(reference, h_data, num_elements);
+    printf("CPU Stream Len: %f\n", reference);
 
   	/* Add your code to perform the stream compaction on the GPU. 
        Store the result in gpu_result. */
@@ -70,6 +71,13 @@ void compact_stream(void)
 int compact_stream_on_device(float *result_d, float *h_data, unsigned int num_elements)
 {
     int n = 0; // Number of elements in the compacted stream
+
+    // grid needed?
+    // tile size needed?
+    dim3 threads(TILE_SIZE, TILE_SIZE);
+    dim3 grid(num_elements);
+    compact_stream_kernel<<<grid, threads>>>(result_d, h_data, num_elements);
+
 
     return n;
 }
